@@ -14,15 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
-
-const categories = [
-  "Paper",
-  "Ink",
-  "Packaging",
-  "Machinery",
-  "Outsourced Print",
-  "Other",
-]
+import { CategorySelect } from "./category-select"
 
 export function AddSupplierForm() {
   const router = useRouter()
@@ -118,24 +110,12 @@ export function AddSupplierForm() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
-          <Select
+          <CategorySelect
             value={formData.category}
             onValueChange={(value) =>
               handleChange({ name: "category", value })
             }
-            required
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>

@@ -1,4 +1,4 @@
-import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer'
+import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer'
 import { format } from 'date-fns'
 
 // Create styles
@@ -8,10 +8,28 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 150,
+    objectFit: 'contain',
+  },
+  headerRight: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
   },
   title: {
     fontSize: 24,
     marginBottom: 10,
+    color: '#1a56db', // Add brand color
+  },
+  companyInfo: {
+    fontSize: 10,
+    color: '#666',
+    textAlign: 'right',
+    marginBottom: 2,
   },
   section: {
     marginBottom: 10,
@@ -104,9 +122,19 @@ export function PurchaseOrderPDF({ data }: PurchaseOrderPDFProps) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
+        {/* Header with Logo */}
         <View style={styles.header}>
-          <Text style={styles.title}>Purchase Order</Text>
+          <Image 
+            src={`${window.location.origin}/imprinta-logo.jpg`}
+            style={styles.logo}
+          />
+          <View style={styles.headerRight}>
+            <Text style={styles.title}>Purchase Order</Text>
+            <Text style={styles.companyInfo}>Imprinta Solutions</Text>
+            <Text style={styles.companyInfo}>123 Business Street</Text>
+            <Text style={styles.companyInfo}>Chennai, Tamil Nadu 600001</Text>
+            <Text style={styles.companyInfo}>Phone: +91 123-456-7890</Text>
+          </View>
         </View>
 
         {/* PO Details */}

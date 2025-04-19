@@ -146,14 +146,17 @@ export function CreatePurchaseOrderForm() {
 
   const generateAndDownloadPDF = async (purchaseOrder: any) => {
     try {
+      // Wait for window to be defined (client-side only)
+      if (typeof window === 'undefined') return;
+
       const blob = await pdf(<PurchaseOrderPDF data={purchaseOrder} />).toBlob()
       const url = URL.createObjectURL(blob)
-      const link = window.document.createElement('a')
+      const link = document.createElement('a')
       link.href = url
       link.download = `purchase-order-${purchaseOrder.poNumber}.pdf`
-      window.document.body.appendChild(link)
+      document.body.appendChild(link)
       link.click()
-      window.document.body.removeChild(link)
+      document.body.removeChild(link)
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Error generating PDF:', error)

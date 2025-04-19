@@ -1,13 +1,24 @@
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { PurchaseOrder } from './purchase-orders';
 import { Timestamp } from 'firebase/firestore';
+
+interface FirestoreData {
+  poNumber?: string;
+  supplier?: string;
+  orderDate?: Timestamp;
+  createdAt?: Timestamp;
+  date?: Timestamp;
+  status?: string;
+  totalAmount?: number;
+  projectRef?: string;
+}
 
 interface PurchaseOrderData {
   id: string;
   poNumber: string;
   supplier: string;
-  date: Timestamp | string;
+  date: Date;
   status: string;
   total: number;
   project: string;
@@ -37,10 +48,44 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     
     // Get all POs
     const poSnapshot = await getDocs(poCollection);
-    const purchaseOrders = poSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as PurchaseOrderData[];
+    const purchaseOrders = await Promise.all(poSnapshot.docs.map(async docSnapshot => {
+      const data = docSnapshot.data() as FirestoreData;
+      
+      // Fetch supplier name if supplier reference exists
+      let supplierName = '';
+      if (data.supplier) {
+        try {
+          const supplierDocRef = doc(db, 'suppliers', data.supplier);
+          const supplierDoc = await getDoc(supplierDocRef);
+          if (supplierDoc.exists()) {
+            const supplierData = supplierDoc.data();
+            supplierName = supplierData?.name || '';
+          }
+        } catch (error) {
+          console.error('Error fetching supplier:', error);
+        }
+      }
+
+      // Handle the date field - try orderDate first, then createdAt
+      let processedDate: Date = new Date();
+      if (data.orderDate instanceof Timestamp) {
+        processedDate = data.orderDate.toDate();
+      } else if (data.createdAt instanceof Timestamp) {
+        processedDate = data.createdAt.toDate();
+      }
+
+      const processedPO: PurchaseOrderData = {
+        id: docSnapshot.id,
+        poNumber: data.poNumber || '',
+        supplier: supplierName,
+        date: processedDate,
+        status: data.status || '',
+        total: data.totalAmount || 0,
+        project: data.projectRef || 'N/A' // Use projectRef directly as the project name
+      };
+
+      return processedPO;
+    }));
 
     // Count POs by status
     const stats: DashboardStats = {
@@ -64,6 +109,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
           stats.pending++;
           break;
         case 'completed':
+        case 'received':
           stats.completed++;
           break;
       }
@@ -71,21 +117,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
     // Get 5 most recent POs
     stats.recentPurchaseOrders = purchaseOrders
-      .sort((a, b) => {
-        const dateA = a.date instanceof Timestamp ? a.date.toDate() : new Date(a.date);
-        const dateB = b.date instanceof Timestamp ? b.date.toDate() : new Date(b.date);
-        return dateB.getTime() - dateA.getTime();
-      })
-      .slice(0, 5)
-      .map(po => ({
-        id: po.id,
-        poNumber: po.poNumber || '',
-        supplier: po.supplier || '',
-        date: po.date instanceof Timestamp ? po.date.toDate() : new Date(po.date),
-        status: po.status || '',
-        total: po.total || 0,
-        project: po.project || ''
-      }));
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, 5);
 
     return stats;
   } catch (error) {

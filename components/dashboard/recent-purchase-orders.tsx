@@ -109,11 +109,28 @@ export function RecentPurchaseOrders() {
               <tr key={po.id} className="border-b border-border/40 hover:bg-muted/5">
                 <td className="p-3 text-sm font-medium">{po.poNumber}</td>
                 <td className="p-3 text-sm">{po.supplier}</td>
-                <td className="p-3 text-sm">{po.date.toLocaleDateString()}</td>
+                <td className="p-3 text-sm">
+                  {po.date instanceof Date && !isNaN(po.date.getTime())
+                    ? new Intl.DateTimeFormat('en-IN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      }).format(po.date)
+                    : 'Invalid Date'}
+                </td>
                 <td className="p-3 text-sm">{getStatusBadge(po.status)}</td>
-                <td className="p-3 text-sm font-medium">${po.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                <td className="p-3 text-sm max-w-[200px] truncate" title={po.project}>
-                  {po.project}
+                <td className="p-3 text-sm font-medium">
+                  {typeof po.total === 'number' 
+                    ? new Intl.NumberFormat('en-IN', { 
+                        style: 'currency', 
+                        currency: 'INR',
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2 
+                      }).format(po.total)
+                    : '₹0.00'}
+                </td>
+                <td className="p-3 text-sm max-w-[200px] truncate" title={po.project || 'N/A'}>
+                  {po.project || 'N/A'}
                 </td>
                 <td className="p-3 text-right">
                   <Button variant="ghost" size="icon" asChild className="h-8 w-8">

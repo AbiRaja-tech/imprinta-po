@@ -2,13 +2,35 @@
 
 import type React from "react"
 
-import { BarChart3, FileText, Home, Package, Settings, Truck, Users, LogOut } from "lucide-react"
+import { BarChart3, FileText, Home, Package, Settings, Truck, Users, LogOut, Tag } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ModeToggle } from "@/components/mode-toggle"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
+
+interface NavItemProps {
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  active?: boolean
+}
+
+function NavItem({ href, icon: Icon, label, active }: NavItemProps) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-accent-foreground",
+        active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50"
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </Link>
+  )
+}
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -34,6 +56,7 @@ export function AppSidebar() {
             active={pathname.includes("/purchase-orders")}
           />
           <NavItem href="/suppliers" icon={Truck} label="Suppliers" active={pathname.includes("/suppliers")} />
+          <NavItem href="/types" icon={Tag} label="Types" active={pathname.includes("/types")} />
           <NavItem href="/inventory" icon={Package} label="Inventory" active={pathname.includes("/inventory")} />
           <NavItem href="/reports" icon={BarChart3} label="Reports" active={pathname.includes("/reports")} />
         </nav>
@@ -44,6 +67,14 @@ export function AppSidebar() {
         <nav className="space-y-1">
           <NavItem href="/users" icon={Users} label="Users" active={pathname.includes("/users")} />
           <NavItem href="/settings" icon={Settings} label="Settings" active={pathname.includes("/settings")} />
+          <Button
+            variant="ghost"
+            className="w-full justify-start px-3 text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+            onClick={() => logout()}
+          >
+            <LogOut className="mr-3 h-4 w-4" />
+            Logout
+          </Button>
         </nav>
       </div>
 
@@ -66,27 +97,5 @@ export function AppSidebar() {
         </div>
       </div>
     </div>
-  )
-}
-
-interface NavItemProps {
-  href: string
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  active?: boolean
-}
-
-function NavItem({ href, icon: Icon, label, active }: NavItemProps) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-        active ? "bg-blue-600/10 text-blue-600" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground",
-      )}
-    >
-      <Icon className={cn("h-4 w-4", active ? "text-blue-600" : "text-muted-foreground")} />
-      <span>{label}</span>
-    </Link>
   )
 }

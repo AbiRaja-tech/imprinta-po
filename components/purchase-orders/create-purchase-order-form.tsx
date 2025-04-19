@@ -19,6 +19,8 @@ import { useForm } from "react-hook-form"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import { getCurrentTaxRate } from "@/lib/config/settings"
+import { pdf } from '@react-pdf/renderer'
+import { PurchaseOrderPDF } from './purchase-order-pdf'
 
 // Mock data for suppliers
 const suppliers = [
@@ -83,11 +85,22 @@ export function CreatePurchaseOrderForm() {
     return `IMPR-${date}-${time}`;
   }
 
-  // Calculate total price for a line item
-  const calculateTotal = (quantity: number, unitPrice: number, taxPercent: number) => {
-    const subtotal = quantity * unitPrice
-    const tax = subtotal * (taxPercent / 100)
-    return subtotal + tax
+  // Calculate totals
+  const calculateTotals = () => {
+    const subtotal = lineItems.reduce((sum, item) => {
+      return sum + (item.quantity * item.unitPrice || 0)
+    }, 0)
+
+    const taxAmount = lineItems.reduce((sum, item) => {
+      const itemSubtotal = item.quantity * item.unitPrice
+      return sum + (itemSubtotal * (item.taxPercent / 100) || 0)
+    }, 0)
+
+    return {
+      subtotal,
+      taxAmount,
+      total: subtotal + taxAmount
+    }
   }
 
   // Update line item
@@ -99,11 +112,9 @@ export function CreatePurchaseOrderForm() {
 
           // Recalculate total if quantity or unitPrice changes
           if (field === "quantity" || field === "unitPrice") {
-            updatedItem.totalPrice = calculateTotal(
-              field === "quantity" ? value : item.quantity,
-              field === "unitPrice" ? value : item.unitPrice,
-              currentTaxRate // Always use the current tax rate
-            )
+            const subtotal = value * (field === "quantity" ? item.unitPrice : item.quantity)
+            const tax = subtotal * (currentTaxRate / 100)
+            updatedItem.totalPrice = subtotal + tax
           }
 
           return updatedItem
@@ -133,20 +144,46 @@ export function CreatePurchaseOrderForm() {
   // Calculate order total
   const orderTotal = lineItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0)
 
+  const generateAndDownloadPDF = async (purchaseOrder: any) => {
+    try {
+      const blob = await pdf(<PurchaseOrderPDF data={purchaseOrder} />).toBlob()
+      const url = URL.createObjectURL(blob)
+      const link = window.document.createElement('a')
+      link.href = url
+      link.download = `purchase-order-${purchaseOrder.poNumber}.pdf`
+      window.document.body.appendChild(link)
+      link.click()
+      window.document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      toast({
+        variant: "destructive",
+        title: "Error generating PDF",
+        description: "There was an error generating the PDF. Please try again.",
+      })
+    }
+  }
+
   // Form submission
   const onSubmit = async (data: any) => {
     setIsSubmitting(true)
 
     try {
-      // Combine form data with line items
+      const totals = calculateTotals()
       const purchaseOrder = {
         ...data,
         lineItems,
         status: "Draft",
-        totalAmount: orderTotal,
+        subtotal: totals.subtotal,
+        taxAmount: totals.taxAmount,
+        totalAmount: totals.total,
       }
 
       console.log("Purchase Order Created:", purchaseOrder)
+
+      // Generate and download PDF
+      await generateAndDownloadPDF(purchaseOrder)
 
       // In a real app, make API call to create PO
       // await createPurchaseOrder(purchaseOrder)
@@ -156,7 +193,7 @@ export function CreatePurchaseOrderForm() {
 
       toast({
         title: "Purchase order created",
-        description: "Your purchase order has been saved as a draft.",
+        description: "Your purchase order has been saved as a draft and downloaded as PDF.",
       })
 
       router.push("/purchase-orders")
@@ -176,15 +213,20 @@ export function CreatePurchaseOrderForm() {
     setIsSubmitting(true)
 
     try {
-      // Combine form data with line items
+      const totals = calculateTotals()
       const purchaseOrder = {
         ...data,
         lineItems,
         status: "Sent",
-        totalAmount: orderTotal,
+        subtotal: totals.subtotal,
+        taxAmount: totals.taxAmount,
+        totalAmount: totals.total,
       }
 
       console.log("Purchase Order Created and Sent:", purchaseOrder)
+
+      // Generate and download PDF
+      await generateAndDownloadPDF(purchaseOrder)
 
       // In a real app, make API call to create and send PO
       // await createAndSendPurchaseOrder(purchaseOrder)
@@ -194,7 +236,7 @@ export function CreatePurchaseOrderForm() {
 
       toast({
         title: "Purchase order created and sent",
-        description: "Your purchase order has been created and sent to the supplier.",
+        description: "Your purchase order has been created, sent to the supplier, and downloaded as PDF.",
       })
 
       router.push("/purchase-orders")
@@ -208,6 +250,8 @@ export function CreatePurchaseOrderForm() {
       setIsSubmitting(false)
     }
   }
+
+  const totals = calculateTotals()
 
   return (
     <Form {...form}>
@@ -433,9 +477,20 @@ export function CreatePurchaseOrderForm() {
                 <Plus className="mr-2 h-4 w-4" /> Add Item
               </Button>
 
-              <div className="flex justify-end space-x-4 text-lg font-semibold">
-                <span>Total Amount:</span>
-                <span>₹{orderTotal.toFixed(2)}</span>
+              {/* Totals Section */}
+              <div className="flex flex-col gap-2 items-end mt-6 border-t border-border/40 pt-4">
+                <div className="flex justify-between w-64">
+                  <span className="text-muted-foreground">Subtotal:</span>
+                  <span>₹{totals.subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between w-64">
+                  <span className="text-muted-foreground">Tax Amount:</span>
+                  <span>₹{totals.taxAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between w-64 border-t border-border/40 pt-2 text-lg font-semibold">
+                  <span>Total Amount:</span>
+                  <span>₹{totals.total.toFixed(2)}</span>
+                </div>
               </div>
             </div>
           </CardContent>

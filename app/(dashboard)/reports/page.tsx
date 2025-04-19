@@ -13,11 +13,16 @@ import { ReportTable } from "@/components/reports/report-table"
 import { getReportStats, ReportStats } from "@/lib/firebase/reports"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ArrowUpIcon, ArrowDownIcon } from "lucide-react"
+import { pdf } from "@react-pdf/renderer"
+import { ReportsPDF } from "@/components/reports/reports-pdf"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function ReportsPage() {
   const [period, setPeriod] = useState("current")
   const [stats, setStats] = useState<ReportStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -33,6 +38,37 @@ export default function ReportsPage() {
 
     fetchStats()
   }, [period])
+
+  const handleExport = async () => {
+    if (!stats) return
+
+    try {
+      setExporting(true)
+      const blob = await pdf(<ReportsPDF data={stats} period={period} />).toBlob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `imprinta-report-${period}-${new Date().toISOString().split('T')[0]}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      
+      toast({
+        title: "Report exported",
+        description: "Your report has been exported as PDF successfully.",
+      })
+    } catch (error) {
+      console.error('Error exporting report:', error)
+      toast({
+        variant: "destructive",
+        title: "Export failed",
+        description: "There was an error exporting the report. Please try again.",
+      })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -90,9 +126,13 @@ export default function ReportsPage() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline">
+          <Button 
+            variant="outline" 
+            onClick={handleExport}
+            disabled={exporting}
+          >
             <FileDown className="mr-2 h-4 w-4" />
-            Export
+            {exporting ? 'Exporting...' : 'Export'}
           </Button>
         </div>
       </div>

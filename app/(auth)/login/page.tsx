@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -11,13 +9,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
-import { useAuth } from "@/hooks/use-auth"
+import { useAuth } from "@/contexts/auth-context"
+import { signIn } from "@/lib/firebase/auth"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const { login, user } = useAuth()
+  const { user } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
 
@@ -33,7 +32,7 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      await login(email, password)
+      await signIn(email, password)
 
       // Show success toast
       toast({
@@ -84,12 +83,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="text-sm text-blue-500 hover:text-blue-400">
-                  Forgot password?
-                </Link>
-              </div>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -97,7 +91,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="bg-[#0a0d14] border-border/40"
-                autoComplete="new-password" // This prevents the browser from suggesting saved passwords
+                autoComplete="new-password"
               />
             </div>
           </CardContent>

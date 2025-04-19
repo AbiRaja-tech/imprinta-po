@@ -530,9 +530,10 @@ export function CreatePurchaseOrderForm() {
 
                   <Input
                     type="number"
-                    value={item.taxPercent}
-                    onChange={(e) => updateLineItem(item.id, "taxPercent", parseFloat(e.target.value))}
-                    className="bg-[#0a0d14] border-border/40"
+                    value={currentTaxRate}
+                    readOnly
+                    disabled
+                    className="bg-[#0a0d14] border-border/40 opacity-50 cursor-not-allowed"
                   />
 
                   <div className="text-right">₹{item.totalPrice.toFixed(2)}</div>

@@ -1,6 +1,6 @@
 import type React from "react"
-import { AppSidebar } from "@/components/app-sidebar"
-import { MobileHeader } from "@/components/mobile-header"
+import { Sidebar } from "@/components/sidebar"
+import { ProtectedRoute } from "@/components/auth/protected-route"
 
 export default function DashboardLayout({
   children,
@@ -8,12 +8,13 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-screen bg-[#0a0d14]">
-      <AppSidebar />
-      <div className="flex flex-col flex-1">
-        <MobileHeader />
-        <main className="flex-1">{children}</main>
+    <ProtectedRoute>
+      <div className="flex h-screen overflow-hidden">
+        <Sidebar />
+        <main className="flex-1 overflow-y-auto bg-background">
+          {children}
+        </main>
       </div>
-    </div>
+    </ProtectedRoute>
   )
 }

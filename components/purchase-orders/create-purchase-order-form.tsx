@@ -22,6 +22,7 @@ import { getCurrentTaxRate } from "@/lib/config/settings"
 import { pdf } from '@react-pdf/renderer'
 import { PurchaseOrderPDF } from './purchase-order-pdf'
 import { createPurchaseOrder, PurchaseOrder } from '@/lib/firebase/purchase-orders'
+import { SupplierSelect } from "./supplier-select"
 
 // Mock data for suppliers
 const suppliers = [
@@ -368,20 +369,10 @@ export function CreatePurchaseOrderForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Supplier</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="bg-[#0a0d14] border-border/40">
-                          <SelectValue placeholder="Select a supplier" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {suppliers.map((supplier) => (
-                          <SelectItem key={supplier.id} value={supplier.id}>
-                            {supplier.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SupplierSelect
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    />
                     <FormDescription>The vendor supplying the items</FormDescription>
                   </FormItem>
                 )}
@@ -451,9 +442,9 @@ export function CreatePurchaseOrderForm() {
 
                   <Input
                     type="number"
-                    value={currentTaxRate}
-                    readOnly
-                    className="bg-[#0a0d14] border-border/40 opacity-50"
+                    value={item.taxPercent}
+                    onChange={(e) => updateLineItem(item.id, "taxPercent", parseFloat(e.target.value))}
+                    className="bg-[#0a0d14] border-border/40"
                   />
 
                   <div className="text-right">₹{item.totalPrice.toFixed(2)}</div>

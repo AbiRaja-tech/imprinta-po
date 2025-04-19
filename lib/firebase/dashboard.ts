@@ -1,41 +1,91 @@
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { db } from './config';
+import { db } from '@/lib/firebase/config';
 import { PurchaseOrder } from './purchase-orders';
+import { Timestamp } from 'firebase/firestore';
+
+interface PurchaseOrderData {
+  id: string;
+  poNumber: string;
+  supplier: string;
+  date: Timestamp | string;
+  status: string;
+  total: number;
+  project: string;
+}
+
+interface RecentPurchaseOrder {
+  id: string;
+  poNumber: string;
+  supplier: string;
+  date: Date;
+  status: string;
+  total: number;
+  project: string;
+}
 
 export interface DashboardStats {
   draft: number;
   sent: number;
   pending: number;
   completed: number;
+  recentPurchaseOrders: RecentPurchaseOrder[];
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   try {
-    const purchaseOrdersRef = collection(db, 'purchaseOrders');
+    const poCollection = collection(db, 'purchaseOrders');
+    
+    // Get all POs
+    const poSnapshot = await getDocs(poCollection);
+    const purchaseOrders = poSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as PurchaseOrderData[];
+
+    // Count POs by status
     const stats: DashboardStats = {
       draft: 0,
       sent: 0,
       pending: 0,
       completed: 0,
+      recentPurchaseOrders: []
     };
 
-    // Get counts for each status
-    const draftQuery = query(purchaseOrdersRef, where('status', '==', 'Draft'));
-    const sentQuery = query(purchaseOrdersRef, where('status', '==', 'Sent'));
-    const pendingQuery = query(purchaseOrdersRef, where('status', '==', 'Pending'));
-    const completedQuery = query(purchaseOrdersRef, where('status', '==', 'Closed'));
+    // Process each PO
+    purchaseOrders.forEach(po => {
+      switch (po.status?.toLowerCase()) {
+        case 'draft':
+          stats.draft++;
+          break;
+        case 'sent':
+          stats.sent++;
+          break;
+        case 'pending':
+          stats.pending++;
+          break;
+        case 'completed':
+          stats.completed++;
+          break;
+      }
+    });
 
-    const [draftSnap, sentSnap, pendingSnap, completedSnap] = await Promise.all([
-      getDocs(draftQuery),
-      getDocs(sentQuery),
-      getDocs(pendingQuery),
-      getDocs(completedQuery),
-    ]);
-
-    stats.draft = draftSnap.size;
-    stats.sent = sentSnap.size;
-    stats.pending = pendingSnap.size;
-    stats.completed = completedSnap.size;
+    // Get 5 most recent POs
+    stats.recentPurchaseOrders = purchaseOrders
+      .sort((a, b) => {
+        const dateA = a.date instanceof Timestamp ? a.date.toDate() : new Date(a.date);
+        const dateB = b.date instanceof Timestamp ? b.date.toDate() : new Date(b.date);
+        return dateB.getTime() - dateA.getTime();
+      })
+      .slice(0, 5)
+      .map(po => ({
+        id: po.id,
+        poNumber: po.poNumber || '',
+        supplier: po.supplier || '',
+        date: po.date instanceof Timestamp ? po.date.toDate() : new Date(po.date),
+        status: po.status || '',
+        total: po.total || 0,
+        project: po.project || ''
+      }));
 
     return stats;
   } catch (error) {

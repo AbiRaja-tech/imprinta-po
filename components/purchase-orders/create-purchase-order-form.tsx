@@ -50,22 +50,36 @@ const initialLineItem = {
 
 export function CreatePurchaseOrderForm() {
   const [lineItems, setLineItems] = useState([initialLineItem])
-  const [files, setFiles] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
 
   const form = useForm({
     defaultValues: {
-      poNumber: `PRINT-PO-2025-${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`,
+      poNumber: generatePONumber(),
       orderDate: new Date(),
       deliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
       supplier: "",
       projectRef: "",
-      notes: "",
-      attachments: "", // Add this field to track attachments in the form
     },
   })
+
+  // Generate PO Number in format IMPR-{date ddmmyy}-time{hhmmss}
+  function generatePONumber() {
+    const now = new Date();
+    const date = now.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit'
+    }).replace(/\//g, '');
+    const time = now.toLocaleTimeString('en-GB', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }).replace(/:/g, '');
+    return `IMPR-${date}-${time}`;
+  }
 
   // Calculate total price for a line item
   const calculateTotal = (quantity: number, unitPrice: number, taxPercent: number) => {
@@ -110,37 +124,15 @@ export function CreatePurchaseOrderForm() {
   // Calculate order total
   const orderTotal = lineItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0)
 
-  // Handle file upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files)
-      setFiles((prevFiles) => [...prevFiles, ...newFiles])
-
-      // Update the form value for attachments field
-      form.setValue("attachments", "files-uploaded")
-    }
-  }
-
-  // Remove file
-  const removeFile = (index: number) => {
-    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index))
-
-    // If no files left, clear the form value
-    if (files.length <= 1) {
-      form.setValue("attachments", "")
-    }
-  }
-
   // Form submission
   const onSubmit = async (data: any) => {
     setIsSubmitting(true)
 
     try {
-      // Combine form data with line items and files
+      // Combine form data with line items
       const purchaseOrder = {
         ...data,
         lineItems,
-        files: files.map((file) => file.name),
         status: "Draft",
         totalAmount: orderTotal,
       }
@@ -175,11 +167,10 @@ export function CreatePurchaseOrderForm() {
     setIsSubmitting(true)
 
     try {
-      // Combine form data with line items and files
+      // Combine form data with line items
       const purchaseOrder = {
         ...data,
         lineItems,
-        files: files.map((file) => file.name),
         status: "Sent",
         totalAmount: orderTotal,
       }
@@ -256,27 +247,32 @@ export function CreatePurchaseOrderForm() {
                 control={form.control}
                 name="orderDate"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>Order Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
+                    <FormControl>
+                      <Popover>
+                        <PopoverTrigger asChild>
                           <Button
-                            variant={"outline"}
+                            variant="outline"
                             className={cn(
-                              "w-full pl-3 text-left font-normal bg-[#0a0d14] border-border/40",
-                              !field.value && "text-muted-foreground",
+                              "w-full justify-start text-left font-normal bg-[#0a0d14] border-border/40",
+                              !field.value && "text-muted-foreground"
                             )}
                           >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
                             {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                      </PopoverContent>
-                    </Popover>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </FormControl>
                     <FormDescription>Date the purchase order is created</FormDescription>
                   </FormItem>
                 )}
@@ -286,27 +282,32 @@ export function CreatePurchaseOrderForm() {
                 control={form.control}
                 name="deliveryDate"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>Expected Delivery Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
+                    <FormControl>
+                      <Popover>
+                        <PopoverTrigger asChild>
                           <Button
-                            variant={"outline"}
+                            variant="outline"
                             className={cn(
-                              "w-full pl-3 text-left font-normal bg-[#0a0d14] border-border/40",
-                              !field.value && "text-muted-foreground",
+                              "w-full justify-start text-left font-normal bg-[#0a0d14] border-border/40",
+                              !field.value && "text-muted-foreground"
                             )}
                           >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
                             {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                      </PopoverContent>
-                    </Popover>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </FormControl>
                     <FormDescription>When you expect to receive the items</FormDescription>
                   </FormItem>
                 )}
@@ -345,197 +346,100 @@ export function CreatePurchaseOrderForm() {
             <CardTitle>Order Items</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border border-border/40 overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border/40 bg-muted/5">
-                    <th className="text-left text-xs font-medium text-muted-foreground p-3">Item Type</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-3">Description</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-3">Quantity</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-3">Unit Price</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-3">Tax %</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-3">Total</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-3"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lineItems.map((item, index) => (
-                    <tr key={item.id} className="border-b border-border/40">
-                      <td className="p-3">
-                        <Select value={item.type} onValueChange={(value) => updateLineItem(item.id, "type", value)}>
-                          <SelectTrigger className="w-[140px] bg-[#0a0d14] border-border/40">
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {itemTypes.map((type) => (
-                              <SelectItem key={type.id} value={type.id}>
-                                {type.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="p-3">
-                        <Input
-                          placeholder="Item description"
-                          value={item.description}
-                          onChange={(e) => updateLineItem(item.id, "description", e.target.value)}
-                          className="bg-[#0a0d14] border-border/40"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={item.quantity || ""}
-                          onChange={(e) => updateLineItem(item.id, "quantity", Number.parseFloat(e.target.value) || 0)}
-                          className="w-[80px] bg-[#0a0d14] border-border/40"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={item.unitPrice || ""}
-                          onChange={(e) => updateLineItem(item.id, "unitPrice", Number.parseFloat(e.target.value) || 0)}
-                          className="w-[100px] bg-[#0a0d14] border-border/40"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={item.taxPercent || ""}
-                          onChange={(e) =>
-                            updateLineItem(item.id, "taxPercent", Number.parseFloat(e.target.value) || 0)
-                          }
-                          className="w-[80px] bg-[#0a0d14] border-border/40"
-                        />
-                      </td>
-                      <td className="p-3 font-medium">${item.totalPrice ? item.totalPrice.toFixed(2) : "0.00"}</td>
-                      <td className="p-3">
-                        {lineItems.length > 1 && (
-                          <Button variant="ghost" size="icon" onClick={() => removeLineItem(item.id)}>
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Remove</span>
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Order Items</h3>
+              <div className="grid grid-cols-[1fr,2fr,1fr,1fr,1fr,1fr,auto] gap-4 items-center">
+                <div>Type</div>
+                <div>Description</div>
+                <div>Quantity</div>
+                <div>Unit Price (₹)</div>
+                <div>Tax %</div>
+                <div>Total (₹)</div>
+                <div></div>
+              </div>
 
-            <div className="mt-4 flex justify-between">
-              <Button type="button" variant="outline" size="sm" onClick={addLineItem} className="border-border/40">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Item
+              {lineItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="grid grid-cols-[1fr,2fr,1fr,1fr,1fr,1fr,auto] gap-4 items-center"
+                >
+                  <Select
+                    value={item.type}
+                    onValueChange={(value) => updateLineItem(item.id, "type", value)}
+                  >
+                    <SelectTrigger className="bg-[#0a0d14] border-border/40">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {itemTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Input
+                    value={item.description}
+                    onChange={(e) => updateLineItem(item.id, "description", e.target.value)}
+                    placeholder="Item description"
+                    className="bg-[#0a0d14] border-border/40"
+                  />
+
+                  <Input
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => updateLineItem(item.id, "quantity", parseFloat(e.target.value))}
+                    className="bg-[#0a0d14] border-border/40"
+                  />
+
+                  <Input
+                    type="number"
+                    value={item.unitPrice}
+                    onChange={(e) => updateLineItem(item.id, "unitPrice", parseFloat(e.target.value))}
+                    className="bg-[#0a0d14] border-border/40"
+                  />
+
+                  <Input
+                    type="number"
+                    value={item.taxPercent}
+                    onChange={(e) => updateLineItem(item.id, "taxPercent", parseFloat(e.target.value))}
+                    className="bg-[#0a0d14] border-border/40"
+                  />
+
+                  <div className="text-right">₹{item.totalPrice.toFixed(2)}</div>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeLineItem(item.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+
+              <Button type="button" variant="outline" onClick={addLineItem} className="w-full">
+                <Plus className="mr-2 h-4 w-4" /> Add Item
               </Button>
 
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground">Total Amount</div>
-                <div className="text-xl font-bold">${orderTotal.toFixed(2)}</div>
+              <div className="flex justify-end space-x-4 text-lg font-semibold">
+                <span>Total Amount:</span>
+                <span>₹{orderTotal.toFixed(2)}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#0f1219] border-border/40">
-          <CardHeader>
-            <CardTitle>Attachments & Notes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4">
-              {/* Properly wrap the file upload in a FormField */}
-              <FormField
-                control={form.control}
-                name="attachments"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Attachments</FormLabel>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="file"
-                        id="file-upload"
-                        className="hidden"
-                        multiple
-                        onChange={(e) => {
-                          handleFileUpload(e)
-                          field.onChange(e)
-                        }}
-                      />
-                      <FormControl>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => document.getElementById("file-upload")?.click()}
-                          className="border-border/40"
-                        >
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload Files
-                        </Button>
-                      </FormControl>
-                      <FormDescription>Upload design proofs, specifications, or quotes</FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {files.length > 0 && (
-                <div className="rounded-md border border-border/40 p-4 bg-[#0a0d14]">
-                  <div className="text-sm font-medium mb-2">Uploaded Files</div>
-                  <ul className="space-y-2">
-                    {files.map((file, index) => (
-                      <li key={index} className="flex items-center justify-between text-sm">
-                        <span className="truncate max-w-[300px]">{file.name}</span>
-                        <Button variant="ghost" size="icon" onClick={() => removeFile(index)}>
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Remove</span>
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <Separator className="bg-border/40" />
-
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Add any special instructions, delivery terms, or other notes..."
-                        className="min-h-[100px] bg-[#0a0d14] border-border/40"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>Additional information for the supplier</FormDescription>
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" type="submit" className="border-border/40" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save as Draft"}
-            </Button>
-            <Button
-              type="button"
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={onSubmitAndGenerate}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Submitting..." : "Submit & Generate PO"}
-            </Button>
-          </CardFooter>
-        </Card>
+        <CardFooter className="flex justify-between">
+          <Button type="submit" variant="outline" disabled={isSubmitting}>
+            Save as Draft
+          </Button>
+          <Button type="button" onClick={onSubmitAndGenerate} disabled={isSubmitting}>
+            Submit & Generate PO
+          </Button>
+        </CardFooter>
       </form>
     </Form>
   )

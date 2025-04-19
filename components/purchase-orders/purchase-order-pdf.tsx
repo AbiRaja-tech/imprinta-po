@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
   },
   table: {
     marginTop: 20,
+    width: '100%',
   },
   tableHeader: {
     flexDirection: 'row',
@@ -54,19 +55,58 @@ const styles = StyleSheet.create({
     borderBottomColor: '#000',
     paddingBottom: 5,
     marginBottom: 5,
+    backgroundColor: '#f8f9fa',
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 0.5,
     borderBottomColor: '#999',
-    paddingVertical: 5,
+    paddingVertical: 8,
+    minHeight: 35,
+    alignItems: 'center',
   },
-  col1: { width: '20%' },
-  col2: { width: '30%' },
-  col3: { width: '10%' },
-  col4: { width: '15%' },
-  col5: { width: '10%' },
-  col6: { width: '15%' },
+  columnContainer: {
+    overflow: 'hidden',
+    paddingHorizontal: 8,
+  },
+  col1: { 
+    width: '20%',
+  },
+  col2: { 
+    width: '30%',
+  },
+  col3: { 
+    width: '10%',
+  },
+  col4: { 
+    width: '15%',
+  },
+  col5: { 
+    width: '10%',
+  },
+  col6: { 
+    width: '15%',
+  },
+  tableCell: {
+    fontSize: 10,
+  },
+  tableCellHeader: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  tableCellWrapped: {
+    fontSize: 10,
+    flexWrap: 'wrap',
+  },
+  tableCellRight: {
+    fontSize: 10,
+    textAlign: 'right',
+  },
+  tableCellRightWrapped: {
+    fontSize: 10,
+    textAlign: 'right',
+    flexWrap: 'wrap',
+  },
   totalsSection: {
     marginTop: 20,
     borderTopWidth: 1,
@@ -161,42 +201,91 @@ export function PurchaseOrderPDF({ data }: PurchaseOrderPDFProps) {
           </View>
         </View>
 
-        {/* Line Items */}
+        {/* Enhanced Line Items Table */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
-            <Text style={styles.col1}>Type</Text>
-            <Text style={styles.col2}>Description</Text>
-            <Text style={styles.col3}>Qty</Text>
-            <Text style={styles.col4}>Unit Price (₹)</Text>
-            <Text style={styles.col5}>Tax %</Text>
-            <Text style={styles.col6}>Total (₹)</Text>
+            <View style={[styles.columnContainer, styles.col1]}>
+              <Text style={styles.tableCellHeader}>Type</Text>
+            </View>
+            <View style={[styles.columnContainer, styles.col2]}>
+              <Text style={styles.tableCellHeader}>Description</Text>
+            </View>
+            <View style={[styles.columnContainer, styles.col3]}>
+              <Text style={[styles.tableCellHeader, styles.tableCellRight]}>Qty</Text>
+            </View>
+            <View style={[styles.columnContainer, styles.col4]}>
+              <Text style={[styles.tableCellHeader, styles.tableCellRight]}>Unit Price (₹)</Text>
+            </View>
+            <View style={[styles.columnContainer, styles.col5]}>
+              <Text style={[styles.tableCellHeader, styles.tableCellRight]}>Tax %</Text>
+            </View>
+            <View style={[styles.columnContainer, styles.col6]}>
+              <Text style={[styles.tableCellHeader, styles.tableCellRight]}>Total (₹)</Text>
+            </View>
           </View>
 
           {data.lineItems.map((item, index) => (
             <View key={index} style={styles.tableRow}>
-              <Text style={styles.col1}>{item.type}</Text>
-              <Text style={styles.col2}>{item.description}</Text>
-              <Text style={styles.col3}>{item.quantity}</Text>
-              <Text style={styles.col4}>{item.unitPrice.toFixed(2)}</Text>
-              <Text style={styles.col5}>{item.taxPercent}%</Text>
-              <Text style={styles.col6}>{item.totalPrice.toFixed(2)}</Text>
+              <View style={[styles.columnContainer, styles.col1]}>
+                <Text style={styles.tableCellWrapped}>{item.type}</Text>
+              </View>
+              <View style={[styles.columnContainer, styles.col2]}>
+                <Text style={styles.tableCellWrapped}>{item.description}</Text>
+              </View>
+              <View style={[styles.columnContainer, styles.col3]}>
+                <Text style={styles.tableCellRight}>{item.quantity}</Text>
+              </View>
+              <View style={[styles.columnContainer, styles.col4]}>
+                <Text style={styles.tableCellRight}>
+                  {new Intl.NumberFormat('en-IN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  }).format(item.unitPrice)}
+                </Text>
+              </View>
+              <View style={[styles.columnContainer, styles.col5]}>
+                <Text style={styles.tableCellRight}>{item.taxPercent}%</Text>
+              </View>
+              <View style={[styles.columnContainer, styles.col6]}>
+                <Text style={styles.tableCellRight}>
+                  {new Intl.NumberFormat('en-IN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  }).format(item.totalPrice)}
+                </Text>
+              </View>
             </View>
           ))}
         </View>
 
-        {/* Totals Section */}
+        {/* Totals Section with enhanced number formatting */}
         <View style={styles.totalsSection}>
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>Subtotal:</Text>
-            <Text style={styles.totalsValue}>₹{data.subtotal.toFixed(2)}</Text>
+            <Text style={styles.totalsValue}>
+              ₹{new Intl.NumberFormat('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              }).format(data.subtotal)}
+            </Text>
           </View>
           <View style={styles.totalsRow}>
             <Text style={styles.totalsLabel}>Tax Amount:</Text>
-            <Text style={styles.totalsValue}>₹{data.taxAmount.toFixed(2)}</Text>
+            <Text style={styles.totalsValue}>
+              ₹{new Intl.NumberFormat('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              }).format(data.taxAmount)}
+            </Text>
           </View>
           <View style={[styles.totalsRow, styles.finalTotal]}>
             <Text style={styles.totalsLabel}>Total Amount:</Text>
-            <Text style={styles.totalsValue}>₹{data.totalAmount.toFixed(2)}</Text>
+            <Text style={styles.totalsValue}>
+              ₹{new Intl.NumberFormat('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              }).format(data.totalAmount)}
+            </Text>
           </View>
         </View>
       </Page>

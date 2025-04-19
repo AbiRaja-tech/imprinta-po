@@ -1,11 +1,10 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -23,6 +22,11 @@ import { pdf } from '@react-pdf/renderer'
 import { PurchaseOrderPDF } from './purchase-order-pdf'
 import { createPurchaseOrder, PurchaseOrder } from '@/lib/firebase/purchase-orders'
 import { SupplierSelect } from "./supplier-select"
+import { TypeSelect } from "./type-select"
+import * as z from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { getSuppliers } from '@/lib/firebase/suppliers'
+import { getTypes } from '@/lib/firebase/types'
 
 // Mock data for suppliers
 const suppliers = [
@@ -42,6 +46,15 @@ const itemTypes = [
   { id: "outsourced", name: "Outsourced Print" },
 ]
 
+// Form validation schema
+const formSchema = z.object({
+  poNumber: z.string(),
+  projectRef: z.string().min(1, "Project reference is required"),
+  orderDate: z.date(),
+  deliveryDate: z.date(),
+  supplier: z.string().min(1, "Supplier is required"),
+})
+
 // Initial line item
 const initialLineItem = {
   id: Date.now().toString(),
@@ -53,6 +66,14 @@ const initialLineItem = {
   totalPrice: 0,
 }
 
+interface LineItem {
+  type: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
 export function CreatePurchaseOrderForm() {
   const [lineItems, setLineItems] = useState([initialLineItem])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -61,6 +82,7 @@ export function CreatePurchaseOrderForm() {
   const currentTaxRate = getCurrentTaxRate()
 
   const form = useForm({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       poNumber: generatePONumber(),
       orderDate: new Date(),
@@ -105,6 +127,18 @@ export function CreatePurchaseOrderForm() {
     }
   }
 
+  // Validate line items
+  const validateLineItems = () => {
+    const errors: string[] = [];
+    lineItems.forEach((item, index) => {
+      if (!item.type) errors.push(`Type is required for item ${index + 1}`);
+      if (!item.description) errors.push(`Description is required for item ${index + 1}`);
+      if (!item.quantity || item.quantity <= 0) errors.push(`Valid quantity is required for item ${index + 1}`);
+      if (!item.unitPrice || item.unitPrice <= 0) errors.push(`Valid unit price is required for item ${index + 1}`);
+    });
+    return errors;
+  }
+
   // Update line item
   const updateLineItem = (id: string, field: string, value: any) => {
     setLineItems((prevItems) =>
@@ -133,25 +167,49 @@ export function CreatePurchaseOrderForm() {
       {
         ...initialLineItem,
         id: Date.now().toString(),
-        taxPercent: currentTaxRate // Ensure new items use current tax rate
+        taxPercent: currentTaxRate
       }
     ])
   }
 
   // Remove line item
   const removeLineItem = (id: string) => {
+    if (lineItems.length === 1) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "At least one item is required.",
+      })
+      return;
+    }
     setLineItems((prevItems) => prevItems.filter((item) => item.id !== id))
   }
 
-  // Calculate order total
-  const orderTotal = lineItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0)
-
   const generateAndDownloadPDF = async (purchaseOrder: any) => {
     try {
-      // Wait for window to be defined (client-side only)
       if (typeof window === 'undefined') return;
 
-      const blob = await pdf(<PurchaseOrderPDF data={purchaseOrder} />).toBlob()
+      // Fetch supplier and type data
+      const suppliers = await getSuppliers();
+      const types = await getTypes();
+
+      // Get supplier name
+      const supplierName = suppliers.find(s => s.id === purchaseOrder.supplier)?.name || purchaseOrder.supplier;
+
+      // Get type names for line items
+      const lineItemsWithNames = purchaseOrder.lineItems.map((item: LineItem) => ({
+        ...item,
+        type: types.find(t => t.id === item.type)?.name || item.type
+      }));
+
+      // Create PDF data with resolved names
+      const pdfData = {
+        ...purchaseOrder,
+        supplier: supplierName,
+        lineItems: lineItemsWithNames
+      };
+
+      const blob = await pdf(<PurchaseOrderPDF data={pdfData} />).toBlob()
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
@@ -172,6 +230,17 @@ export function CreatePurchaseOrderForm() {
 
   // Form submission
   const onSubmit = async (data: any) => {
+    // Validate line items
+    const lineItemErrors = validateLineItems();
+    if (lineItemErrors.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: lineItemErrors[0],
+      });
+      return;
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -210,6 +279,28 @@ export function CreatePurchaseOrderForm() {
   }
 
   const onSubmitAndGenerate = async () => {
+    // Validate form first
+    const formValid = await form.trigger();
+    if (!formValid) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+      });
+      return;
+    }
+
+    // Validate line items
+    const lineItemErrors = validateLineItems();
+    if (lineItemErrors.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: lineItemErrors[0],
+      });
+      return;
+    }
+
     const data = form.getValues()
     setIsSubmitting(true)
 
@@ -278,7 +369,7 @@ export function CreatePurchaseOrderForm() {
                 name="projectRef"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Project Reference</FormLabel>
+                    <FormLabel>Project Reference *</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -287,18 +378,19 @@ export function CreatePurchaseOrderForm() {
                       />
                     </FormControl>
                     <FormDescription>The project or job this purchase is for</FormDescription>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
                 name="orderDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Order Date</FormLabel>
+                    <FormLabel>Order Date *</FormLabel>
                     <FormControl>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -324,6 +416,7 @@ export function CreatePurchaseOrderForm() {
                       </Popover>
                     </FormControl>
                     <FormDescription>Date the purchase order is created</FormDescription>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -333,7 +426,7 @@ export function CreatePurchaseOrderForm() {
                 name="deliveryDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Expected Delivery Date</FormLabel>
+                    <FormLabel>Expected Delivery Date *</FormLabel>
                     <FormControl>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -359,6 +452,7 @@ export function CreatePurchaseOrderForm() {
                       </Popover>
                     </FormControl>
                     <FormDescription>When you expect to receive the items</FormDescription>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -368,12 +462,13 @@ export function CreatePurchaseOrderForm() {
                 name="supplier"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Supplier</FormLabel>
+                    <FormLabel>Supplier *</FormLabel>
                     <SupplierSelect
                       value={field.value}
                       onValueChange={field.onChange}
                     />
                     <FormDescription>The vendor supplying the items</FormDescription>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -389,10 +484,10 @@ export function CreatePurchaseOrderForm() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Order Items</h3>
               <div className="grid grid-cols-[1fr,2fr,1fr,1fr,1fr,1fr,auto] gap-4 items-center">
-                <div>Type</div>
-                <div>Description</div>
-                <div>Quantity</div>
-                <div>Unit Price (₹)</div>
+                <div>Type *</div>
+                <div>Description *</div>
+                <div>Quantity *</div>
+                <div>Unit Price (₹) *</div>
                 <div>Tax %</div>
                 <div>Total (₹)</div>
                 <div></div>
@@ -403,21 +498,11 @@ export function CreatePurchaseOrderForm() {
                   key={item.id}
                   className="grid grid-cols-[1fr,2fr,1fr,1fr,1fr,1fr,auto] gap-4 items-center"
                 >
-                  <Select
+                  <TypeSelect
                     value={item.type}
                     onValueChange={(value) => updateLineItem(item.id, "type", value)}
-                  >
-                    <SelectTrigger className="bg-[#0a0d14] border-border/40">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {itemTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    className="bg-[#0a0d14] border-border/40"
+                  />
 
                   <Input
                     value={item.description}
@@ -430,6 +515,7 @@ export function CreatePurchaseOrderForm() {
                     type="number"
                     value={item.quantity}
                     onChange={(e) => updateLineItem(item.id, "quantity", parseFloat(e.target.value))}
+                    min="1"
                     className="bg-[#0a0d14] border-border/40"
                   />
 
@@ -437,6 +523,8 @@ export function CreatePurchaseOrderForm() {
                     type="number"
                     value={item.unitPrice}
                     onChange={(e) => updateLineItem(item.id, "unitPrice", parseFloat(e.target.value))}
+                    min="0"
+                    step="0.01"
                     className="bg-[#0a0d14] border-border/40"
                   />
 
@@ -464,7 +552,6 @@ export function CreatePurchaseOrderForm() {
                 <Plus className="mr-2 h-4 w-4" /> Add Item
               </Button>
 
-              {/* Totals Section */}
               <div className="flex flex-col gap-2 items-end mt-6 border-t border-border/40 pt-4">
                 <div className="flex justify-between w-64">
                   <span className="text-muted-foreground">Subtotal:</span>
@@ -483,7 +570,7 @@ export function CreatePurchaseOrderForm() {
           </CardContent>
         </Card>
 
-        <CardFooter className="flex justify-between">
+        <CardFooter className="flex justify-end gap-4">
           <Button type="submit" variant="outline" disabled={isSubmitting}>
             Save as Draft
           </Button>

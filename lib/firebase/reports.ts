@@ -3,6 +3,7 @@ import { db } from './config';
 import { PurchaseOrder } from './purchase-orders';
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Supplier } from './suppliers';
+import { ItemType } from './types';
 
 // Define item type mappings
 const itemTypeNames: Record<string, string> = {
@@ -46,6 +47,13 @@ export async function getReportStats(period: 'current' | 'previous' = 'current')
     const endDate = period === 'current'
       ? endOfMonth(now)
       : endOfMonth(subMonths(now, 1));
+
+    // Fetch all types first
+    const typesSnapshot = await getDocs(collection(db, 'types'));
+    const typeDetails = new Map<string, ItemType>();
+    typesSnapshot.docs.forEach(doc => {
+      typeDetails.set(doc.id, { id: doc.id, ...doc.data() } as ItemType);
+    });
 
     const q = query(
       collection(db, 'purchaseOrders'),
@@ -91,10 +99,10 @@ export async function getReportStats(period: 'current' | 'previous' = 'current')
       return acc;
     }, [] as { supplier: string; total: number }[]);
 
-    // Calculate item type distribution with proper names
+    // Calculate item type distribution with proper names from types collection
     const itemTypeDistribution = orders.reduce((acc, order) => {
       order.lineItems.forEach(item => {
-        const typeName = itemTypeNames[item.type] || item.type;
+        const typeName = typeDetails.get(item.type)?.name || item.type;
         const existing = acc.find(t => t.type === typeName);
         if (existing) {
           existing.count += 1;

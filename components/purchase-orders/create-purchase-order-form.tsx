@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation"
 import { getCurrentTaxRate } from "@/lib/config/settings"
 import { pdf } from '@react-pdf/renderer'
 import { PurchaseOrderPDF } from './purchase-order-pdf'
+import { createPurchaseOrder, PurchaseOrder } from '@/lib/firebase/purchase-orders'
 
 // Mock data for suppliers
 const suppliers = [
@@ -174,25 +175,20 @@ export function CreatePurchaseOrderForm() {
 
     try {
       const totals = calculateTotals()
-      const purchaseOrder = {
+      const purchaseOrder: Omit<PurchaseOrder, 'createdAt'> = {
         ...data,
         lineItems,
-        status: "Draft",
+        status: "Draft" as const,
         subtotal: totals.subtotal,
         taxAmount: totals.taxAmount,
         totalAmount: totals.total,
       }
 
-      console.log("Purchase Order Created:", purchaseOrder)
+      // Save to Firestore
+      await createPurchaseOrder(purchaseOrder)
 
       // Generate and download PDF
       await generateAndDownloadPDF(purchaseOrder)
-
-      // In a real app, make API call to create PO
-      // await createPurchaseOrder(purchaseOrder)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       toast({
         title: "Purchase order created",
@@ -201,6 +197,7 @@ export function CreatePurchaseOrderForm() {
 
       router.push("/purchase-orders")
     } catch (error) {
+      console.error('Error creating purchase order:', error)
       toast({
         variant: "destructive",
         title: "Error creating purchase order",
@@ -217,33 +214,29 @@ export function CreatePurchaseOrderForm() {
 
     try {
       const totals = calculateTotals()
-      const purchaseOrder = {
+      const purchaseOrder: Omit<PurchaseOrder, 'createdAt'> = {
         ...data,
         lineItems,
-        status: "Sent",
+        status: "Sent" as const,
         subtotal: totals.subtotal,
         taxAmount: totals.taxAmount,
         totalAmount: totals.total,
       }
 
-      console.log("Purchase Order Created and Sent:", purchaseOrder)
+      // Save to Firestore
+      await createPurchaseOrder(purchaseOrder)
 
       // Generate and download PDF
       await generateAndDownloadPDF(purchaseOrder)
 
-      // In a real app, make API call to create and send PO
-      // await createAndSendPurchaseOrder(purchaseOrder)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
       toast({
         title: "Purchase order created and sent",
-        description: "Your purchase order has been created, sent to the supplier, and downloaded as PDF.",
+        description: "Your purchase order has been created, saved to the database, and downloaded as PDF.",
       })
 
       router.push("/purchase-orders")
     } catch (error) {
+      console.error('Error creating purchase order:', error)
       toast({
         variant: "destructive",
         title: "Error creating purchase order",

@@ -4,6 +4,15 @@ import { PurchaseOrder } from './purchase-orders';
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Supplier } from './suppliers';
 
+// Define item type mappings
+const itemTypeNames: Record<string, string> = {
+  'paper': 'Paper',
+  'ink': 'Ink',
+  'packaging': 'Packaging',
+  'machinery': 'Machinery',
+  'outsourced': 'Outsourced Print',
+};
+
 export interface ReportStats {
   totalPOs: number;
   totalSpent: number;
@@ -82,15 +91,16 @@ export async function getReportStats(period: 'current' | 'previous' = 'current')
       return acc;
     }, [] as { supplier: string; total: number }[]);
 
-    // Calculate item type distribution
+    // Calculate item type distribution with proper names
     const itemTypeDistribution = orders.reduce((acc, order) => {
       order.lineItems.forEach(item => {
-        const existing = acc.find(t => t.type === item.type);
+        const typeName = itemTypeNames[item.type] || item.type;
+        const existing = acc.find(t => t.type === typeName);
         if (existing) {
           existing.count += 1;
           existing.total += item.totalPrice;
         } else {
-          acc.push({ type: item.type, count: 1, total: item.totalPrice });
+          acc.push({ type: typeName, count: 1, total: item.totalPrice });
         }
       });
       return acc;

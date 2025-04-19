@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils"
 import { useForm } from "react-hook-form"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
+import { getCurrentTaxRate } from "@/lib/config/settings"
 
 // Mock data for suppliers
 const suppliers = [
@@ -44,7 +45,7 @@ const initialLineItem = {
   description: "",
   quantity: 0,
   unitPrice: 0,
-  taxPercent: 0,
+  taxPercent: getCurrentTaxRate(),
   totalPrice: 0,
 }
 
@@ -53,6 +54,7 @@ export function CreatePurchaseOrderForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
+  const currentTaxRate = getCurrentTaxRate()
 
   const form = useForm({
     defaultValues: {
@@ -95,12 +97,12 @@ export function CreatePurchaseOrderForm() {
         if (item.id === id) {
           const updatedItem = { ...item, [field]: value }
 
-          // Recalculate total if quantity, unitPrice, or taxPercent changes
-          if (field === "quantity" || field === "unitPrice" || field === "taxPercent") {
+          // Recalculate total if quantity or unitPrice changes
+          if (field === "quantity" || field === "unitPrice") {
             updatedItem.totalPrice = calculateTotal(
               field === "quantity" ? value : item.quantity,
               field === "unitPrice" ? value : item.unitPrice,
-              field === "taxPercent" ? value : item.taxPercent,
+              currentTaxRate // Always use the current tax rate
             )
           }
 
@@ -113,7 +115,14 @@ export function CreatePurchaseOrderForm() {
 
   // Add new line item
   const addLineItem = () => {
-    setLineItems((prevItems) => [...prevItems, { ...initialLineItem, id: Date.now().toString() }])
+    setLineItems((prevItems) => [
+      ...prevItems,
+      {
+        ...initialLineItem,
+        id: Date.now().toString(),
+        taxPercent: currentTaxRate // Ensure new items use current tax rate
+      }
+    ])
   }
 
   // Remove line item
@@ -402,9 +411,9 @@ export function CreatePurchaseOrderForm() {
 
                   <Input
                     type="number"
-                    value={item.taxPercent}
-                    onChange={(e) => updateLineItem(item.id, "taxPercent", parseFloat(e.target.value))}
-                    className="bg-[#0a0d14] border-border/40"
+                    value={currentTaxRate}
+                    readOnly
+                    className="bg-[#0a0d14] border-border/40 opacity-50"
                   />
 
                   <div className="text-right">₹{item.totalPrice.toFixed(2)}</div>

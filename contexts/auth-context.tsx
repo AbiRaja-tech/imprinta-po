@@ -1,70 +1,126 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'
+import { Auth, User, onAuthStateChanged } from 'firebase/auth'
+import { getAuth } from 'firebase/auth'
+import { FirebaseApp } from 'firebase/app'
+import { app } from '@/lib/firebase/config'
+import { getCurrentUserRole, signOut as authSignOut } from '@/lib/firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase/config'
-import type { User, AuthState } from '@/lib/types/auth'
+import { db } from '@/lib/firebase/config'
 
-interface AuthContextType extends AuthState {
+// Initialize Firebase services with proper typing
+const auth: Auth = getAuth(app as FirebaseApp)
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  userRole: 'admin' | 'user' | null;
+  permissions: {
+    canManageUsers: boolean;
+    canViewReports: boolean;
+    canManageSettings: boolean;
+  } | null;
   signOut: () => Promise<void>;
-  isAdmin: () => boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  userRole: null,
+  permissions: null,
+  signOut: async () => {},
+})
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    loading: true,
-  })
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null)
+  const [permissions, setPermissions] = useState<AuthContextType['permissions']>(null)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // Get additional user data from Firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
-        if (userDoc.exists()) {
-          const userData = userDoc.data() as Omit<User, 'id'>
-          setState({
-            user: {
-              id: firebaseUser.uid,
-              ...userData,
-              createdAt: userData.createdAt.toDate(),
-            },
-            loading: false,
-          })
-        } else {
-          setState({ user: null, loading: false })
+    console.log('Setting up auth state listener');
+    
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', { userId: user?.uid });
+      
+      if (user) {
+        try {
+          setUser(user)
+          // Get user document from Firestore
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          console.log('User document:', userDoc.data());
+          
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const role = userData.role as 'admin' | 'user';
+            setUserRole(role);
+            
+            // Get permissions from user document or set based on role
+            if (userData.permissions) {
+              console.log('Setting permissions from document:', userData.permissions);
+              setPermissions(userData.permissions);
+            } else {
+              console.log('Setting default permissions for role:', role);
+              setPermissions(role === 'admin' ? {
+                canManageUsers: true,
+                canViewReports: true,
+                canManageSettings: true,
+              } : {
+                canManageUsers: false,
+                canViewReports: false,
+                canManageSettings: false,
+              });
+            }
+          } else {
+            console.warn('No user document found');
+            setUserRole(null);
+            setPermissions(null);
+          }
+        } catch (error) {
+          console.error('Error setting up user:', error);
+          setUser(null)
+          setUserRole(null)
+          setPermissions(null)
         }
       } else {
-        setState({ user: null, loading: false })
+        console.log('No user, clearing state');
+        setUser(null)
+        setUserRole(null)
+        setPermissions(null)
       }
+      
+      setLoading(false)
     })
 
-    return () => unsubscribe()
+    return () => {
+      console.log('Cleaning up auth state listener');
+      unsubscribe()
+    }
   }, [])
 
   const signOut = async () => {
-    await firebaseSignOut(auth)
-    setState({ user: null, loading: false })
+    try {
+      await authSignOut()
+      // State will be cleared by the auth state listener
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
   }
 
-  const isAdmin = () => {
-    return state.user?.role === 'admin'
-  }
+  console.log('Auth context current state:', {
+    userId: user?.uid,
+    userRole,
+    permissions,
+    loading,
+    isAuthenticated: !!user
+  });
 
   return (
-    <AuthContext.Provider value={{ ...state, signOut, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, userRole, permissions, signOut }}>
       {children}
     </AuthContext.Provider>
   )
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-} 
+export const useAuth = () => useContext(AuthContext) 

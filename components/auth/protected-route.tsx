@@ -3,16 +3,14 @@
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect } from 'react'
-
-// Define which routes require admin access
-const ADMIN_ROUTES = ['/settings', '/users', '/reports']
+import { PROTECTED_ROUTES, hasPermission } from '@/lib/access-control'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading, isAdmin } = useAuth()
+  const { user, loading, permissions } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -24,13 +22,14 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         return
       }
 
-      // If authenticated but trying to access admin routes without admin role
-      if (ADMIN_ROUTES.includes(pathname) && !isAdmin()) {
+      // Check if current route requires specific permissions
+      const requiredPermission = PROTECTED_ROUTES[pathname as keyof typeof PROTECTED_ROUTES]
+      if (requiredPermission && permissions && !hasPermission(permissions, requiredPermission)) {
         router.push('/dashboard')
         return
       }
     }
-  }, [user, loading, pathname, router, isAdmin])
+  }, [user, loading, pathname, router, permissions])
 
   // Show nothing while checking auth
   if (loading) {
@@ -42,8 +41,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return null
   }
 
-  // If trying to access admin route without permission, don't render
-  if (ADMIN_ROUTES.includes(pathname) && !isAdmin()) {
+  // Check route permissions
+  const requiredPermission = PROTECTED_ROUTES[pathname as keyof typeof PROTECTED_ROUTES]
+  if (requiredPermission && permissions && !hasPermission(permissions, requiredPermission)) {
     return null
   }
 

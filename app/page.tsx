@@ -2,22 +2,22 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/hooks/use-auth"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function HomePage() {
   const router = useRouter()
-  const { user, isLoading } = useAuth()
+  const { user, loading } = useAuth()
 
   useEffect(() => {
     // Only redirect after auth state is determined
-    if (!isLoading) {
+    if (!loading) {
       if (user) {
         router.push("/dashboard")
       } else {
         router.push("/login")
       }
     }
-  }, [user, isLoading, router])
+  }, [user, loading, router])
 
   // Show loading state while determining auth
   return (

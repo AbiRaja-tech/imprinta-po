@@ -21,7 +21,7 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname()
-  const { isAdmin, signOut } = useAuth()
+  const { user, userRole, signOut } = useAuth()
 
   const routes = [
     {
@@ -55,7 +55,7 @@ export function Sidebar({ className }: SidebarProps) {
       color: "text-emerald-500",
     },
     // Admin only routes
-    ...(isAdmin() ? [
+    ...(userRole === 'admin' ? [
       {
         label: "Reports",
         icon: BarChart,

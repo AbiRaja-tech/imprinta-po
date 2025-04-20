@@ -71,6 +71,7 @@ export default function PurchaseOrderDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [supplierName, setSupplierName] = useState('')
   const [isClient, setIsClient] = useState(false)
+  const [itemTypes, setItemTypes] = useState<Record<string, string>>({})
 
   useEffect(() => {
     setIsClient(true)
@@ -92,6 +93,23 @@ export default function PurchaseOrderDetailPage() {
           }
         }
 
+        // Fetch item types for all line items
+        const typeIds = purchaseOrder.lineItems?.map((item: any) => item.type) || [];
+        const uniqueTypeIds = [...new Set(typeIds)];
+        const types: Record<string, string> = {};
+        
+        await Promise.all(
+          uniqueTypeIds.map(async (typeId) => {
+            if (typeId) {
+              const typeDoc = await getDoc(doc(db, 'types', typeId));
+              if (typeDoc.exists()) {
+                types[typeId] = typeDoc.data()?.name || 'Unknown Type';
+              }
+            }
+          })
+        );
+        
+        setItemTypes(types);
         setPo(purchaseOrder);
       } catch (error) {
         console.error('Error fetching purchase order:', error);
@@ -269,7 +287,7 @@ export default function PurchaseOrderDetailPage() {
                   <tbody>
                     {po.lineItems?.map((item: any, index: number) => (
                       <tr key={index} className="border-b border-border/40">
-                        <td className="py-3 px-4">{item.type}</td>
+                        <td className="py-3 px-4">{itemTypes[item.type] || "Unknown Type"}</td>
                         <td className="py-3 px-4">{item.description}</td>
                         <td className="py-3 px-4 text-right">{item.quantity}</td>
                         <td className="py-3 px-4 text-right">

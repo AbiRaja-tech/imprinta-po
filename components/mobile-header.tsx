@@ -1,13 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import { Menu, FileText, Home, Building2, Package2, Boxes } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Menu, FileText, Home, Building2, Package2, Boxes, Settings, LogOut, BarChart2, Users } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { handleLogout } from "@/components/auth/logout"
 
 export function MobileHeader() {
   const [open, setOpen] = useState(false)
+
+  const onLogoutClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    setOpen(false);
+    await handleLogout();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
@@ -25,35 +32,77 @@ export function MobileHeader() {
             <nav className="flex flex-col gap-1 p-4">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                 onClick={() => setOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
               >
                 <Home className="h-4 w-4" />
-                Dashboard
+                <span>Dashboard</span>
               </Link>
               <Link
                 href="/purchase-orders"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                 onClick={() => setOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
               >
                 <FileText className="h-4 w-4" />
-                Purchase Orders
+                <span>Purchase Orders</span>
               </Link>
               <Link
                 href="/suppliers"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                 onClick={() => setOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
               >
                 <Building2 className="h-4 w-4" />
-                Suppliers
+                <span>Suppliers</span>
               </Link>
               <Link
-                to="/types"
-                className="flex flex-col items-center gap-1 text-xs font-medium"
+                href="/types"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
               >
-                <Boxes className="h-5 w-5" />
-                Types
+                <Boxes className="h-4 w-4" />
+                <span>Types</span>
               </Link>
+              <Link
+                href="/inventory"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
+              >
+                <Package2 className="h-4 w-4" />
+                <span>Inventory</span>
+              </Link>
+              <div className="mt-4 border-t border-border/40 pt-4">
+                <Link
+                  href="/users"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
+                >
+                  <Users className="h-4 w-4" />
+                  <span>Users</span>
+                </Link>
+                <Link
+                  href="/reports"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
+                >
+                  <BarChart2 className="h-4 w-4" />
+                  <span>Reports</span>
+                </Link>
+                <Link
+                  href="/settings"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Settings</span>
+                </Link>
+                <button
+                  onClick={onLogoutClick}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-500 hover:bg-accent"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </button>
+              </div>
             </nav>
           </SheetContent>
         </Sheet>

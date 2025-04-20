@@ -2,10 +2,14 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye } from "lucide-react"
+import { Eye, ChevronRight, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { getDashboardStats } from "@/lib/firebase/dashboard"
 import { useEffect, useState } from "react"
+import { format } from "date-fns"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
+import { formatCurrency } from "@/lib/utils"
 
 interface RecentPurchaseOrder {
   id: string
@@ -18,154 +22,123 @@ interface RecentPurchaseOrder {
 }
 
 // Helper function to get badge variant based on status
-function getStatusBadge(status: string) {
+function getStatusBadgeVariant(status: string): "outline" {
+  return "outline"
+}
+
+function getStatusBadgeClasses(status: string): string {
   switch (status?.toLowerCase()) {
     case "draft":
-      return (
-        <Badge variant="outline" className="bg-blue-950/30 text-blue-400 border-blue-800">
-          Draft
-        </Badge>
-      )
+      return "bg-blue-950/30 text-blue-400 border-blue-800"
     case "sent":
-      return (
-        <Badge variant="outline" className="bg-indigo-950/30 text-indigo-400 border-indigo-800">
-          Sent
-        </Badge>
-      )
+      return "bg-indigo-950/30 text-indigo-400 border-indigo-800"
     case "pending":
-      return (
-        <Badge variant="outline" className="bg-amber-950/30 text-amber-400 border-amber-800">
-          Pending
-        </Badge>
-      )
+      return "bg-amber-950/30 text-amber-400 border-amber-800"
     case "received":
-      return (
-        <Badge variant="outline" className="bg-emerald-950/30 text-emerald-400 border-emerald-800">
-          Received
-        </Badge>
-      )
+      return "bg-emerald-950/30 text-emerald-400 border-emerald-800"
     default:
-      return <Badge variant="outline">{status}</Badge>
+      return ""
   }
 }
 
+function LoadingSpinner({ className }: { className?: string }) {
+  return <Loader2 className={cn("h-4 w-4 animate-spin", className)} />
+}
+
 export function RecentPurchaseOrders() {
-  const [recentPOs, setRecentPOs] = useState<RecentPurchaseOrder[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true)
+  const [recentOrders, setRecentOrders] = useState<RecentPurchaseOrder[]>([])
 
   useEffect(() => {
-    const fetchRecentPOs = async () => {
+    const fetchRecentOrders = async () => {
       try {
-        const dashboardStats = await getDashboardStats();
-        setRecentPOs(dashboardStats.recentPurchaseOrders);
+        const stats = await getDashboardStats()
+        setRecentOrders(stats.recentPurchaseOrders || [])
       } catch (error) {
-        console.error('Error fetching recent purchase orders:', error);
+        console.error('Error fetching recent orders:', error)
       } finally {
-        setLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
-    fetchRecentPOs();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="bg-[#0f1219] rounded-lg border border-border/40 p-4">
-        <p className="text-sm text-muted-foreground">Loading recent purchase orders...</p>
-      </div>
-    );
-  }
-
-  if (recentPOs.length === 0) {
-    return (
-      <div className="bg-[#0f1219] rounded-lg border border-border/40 p-4">
-        <p className="text-sm text-muted-foreground">No recent purchase orders found.</p>
-      </div>
-    );
-  }
+    fetchRecentOrders()
+  }, [])
 
   return (
-    <div className="bg-[#0f1219] rounded-lg flex flex-col mb-20 md:mb-0">
-      <div className="p-4 border-b border-border/40">
-        <h2 className="text-lg font-semibold">Recent Purchase Orders</h2>
-        <p className="text-sm text-muted-foreground mt-1">Your most recent purchase orders across all suppliers.</p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Recent Purchase Orders</h2>
+          <p className="text-sm text-muted-foreground">Latest purchase orders across all projects.</p>
+        </div>
+        <Button variant="outline" asChild>
+          <Link href="/purchase-orders">View All</Link>
+        </Button>
       </div>
-
-      <div className="relative">
-        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-border">
-          <table className="w-full border-collapse">
-            <thead className="bg-[#0f1219]">
-              <tr>
-                <th scope="col" className="sticky left-0 z-20 bg-[#0f1219] px-4 py-3.5 text-left text-sm font-medium text-muted-foreground border-r border-border/40 min-w-[200px]">
-                  PO Number
-                </th>
-                <th scope="col" className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[150px]">
-                  Supplier
-                </th>
-                <th scope="col" className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[120px]">
-                  Date
-                </th>
-                <th scope="col" className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[120px]">
-                  Status
-                </th>
-                <th scope="col" className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[150px]">
-                  Total
-                </th>
-                <th scope="col" className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[200px]">
-                  Project
-                </th>
-                <th scope="col" className="relative px-4 py-3.5 min-w-[100px]">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/40">
-              {recentPOs.map((po) => (
-                <tr key={po.id} className="hover:bg-muted/5">
-                  <td className="sticky left-0 z-20 bg-[#0f1219] whitespace-nowrap px-4 py-4 text-sm font-medium border-r border-border/40">
-                    {po.poNumber}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-sm">
-                    {po.supplier}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-sm">
-                    {po.date instanceof Date && !isNaN(po.date.getTime())
-                      ? new Intl.DateTimeFormat('en-IN', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit'
-                        }).format(po.date)
-                      : 'Invalid Date'}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-sm">
-                    {getStatusBadge(po.status)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-sm font-medium">
-                    {typeof po.total === 'number' 
-                      ? new Intl.NumberFormat('en-IN', { 
-                          style: 'currency', 
-                          currency: 'INR',
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2 
-                        }).format(po.total)
-                      : '₹0.00'}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-sm" title={po.project || 'N/A'}>
-                    {po.project || 'N/A'}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-right text-sm">
-                    <Button variant="ghost" size="icon" asChild className="h-8 w-8">
-                      <Link href={`/purchase-orders/${po.id}`}>
-                        <Eye className="h-4 w-4" />
-                        <span className="sr-only">View</span>
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>PO Number</TableHead>
+              <TableHead className="hidden sm:table-cell">Supplier</TableHead>
+              <TableHead className="hidden md:table-cell">Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="hidden lg:table-cell">Total</TableHead>
+              <TableHead className="hidden xl:table-cell">Project</TableHead>
+              <TableHead className="w-[50px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  <LoadingSpinner className="mx-auto" />
+                </TableCell>
+              </TableRow>
+            ) : recentOrders.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  No recent purchase orders
+                </TableCell>
+              </TableRow>
+            ) : (
+              recentOrders.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell className="font-medium">{order.poNumber}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{order.supplier}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {format(new Date(order.date), 'MMM d, yyyy')}
+                  </TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant={getStatusBadgeVariant(order.status)} 
+                      className={getStatusBadgeClasses(order.status)}
+                    >
+                      {order.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {formatCurrency(order.total)}
+                  </TableCell>
+                  <TableCell className="hidden xl:table-cell">{order.project}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      asChild
+                      className="ml-auto"
+                    >
+                      <Link href={`/purchase-orders/${order.id}`}>
+                        <ChevronRight className="h-4 w-4" />
+                        <span className="sr-only">View details</span>
                       </Link>
                     </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )

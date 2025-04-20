@@ -1,8 +1,13 @@
 "use client"
 
-import { FileText, Send, Clock, CheckCircle } from "lucide-react"
+import { FileText, Send, Clock, CheckCircle, Loader2 } from "lucide-react"
 import { getDashboardStats } from "@/lib/firebase/dashboard"
 import { useEffect, useState } from "react"
+import { cn } from "@/lib/utils"
+
+function LoadingSpinner({ className }: { className?: string }) {
+  return <Loader2 className={cn("h-4 w-4 animate-spin", className)} />
+}
 
 export function StatusCards() {
   const [stats, setStats] = useState({
@@ -11,6 +16,7 @@ export function StatusCards() {
     pending: 0,
     completed: 0
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -24,6 +30,8 @@ export function StatusCards() {
         });
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -38,8 +46,14 @@ export function StatusCards() {
             <FileText className="h-6 w-6 text-blue-500" />
           </div>
           <div>
-            <p className="text-2xl font-bold">{stats.draft}</p>
-            <p className="text-sm text-muted-foreground">Purchase orders in draft</p>
+            {isLoading ? (
+              <LoadingSpinner className="h-6 w-6" />
+            ) : (
+              <>
+                <p className="text-2xl font-bold">{stats.draft}</p>
+                <p className="text-sm text-muted-foreground">Purchase orders in draft</p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -50,8 +64,14 @@ export function StatusCards() {
             <Send className="h-6 w-6 text-purple-500" />
           </div>
           <div>
-            <p className="text-2xl font-bold">{stats.sent}</p>
-            <p className="text-sm text-muted-foreground">Purchase orders sent to suppliers</p>
+            {isLoading ? (
+              <LoadingSpinner className="h-6 w-6" />
+            ) : (
+              <>
+                <p className="text-2xl font-bold">{stats.sent}</p>
+                <p className="text-sm text-muted-foreground">Purchase orders sent to suppliers</p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -62,8 +82,14 @@ export function StatusCards() {
             <Clock className="h-6 w-6 text-orange-500" />
           </div>
           <div>
-            <p className="text-2xl font-bold">{stats.pending}</p>
-            <p className="text-sm text-muted-foreground">Awaiting delivery or partial</p>
+            {isLoading ? (
+              <LoadingSpinner className="h-6 w-6" />
+            ) : (
+              <>
+                <p className="text-2xl font-bold">{stats.pending}</p>
+                <p className="text-sm text-muted-foreground">Awaiting delivery or partial</p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -74,8 +100,14 @@ export function StatusCards() {
             <CheckCircle className="h-6 w-6 text-green-500" />
           </div>
           <div>
-            <p className="text-2xl font-bold">{stats.completed}</p>
-            <p className="text-sm text-muted-foreground">Fulfilled purchase orders</p>
+            {isLoading ? (
+              <LoadingSpinner className="h-6 w-6" />
+            ) : (
+              <>
+                <p className="text-2xl font-bold">{stats.completed}</p>
+                <p className="text-sm text-muted-foreground">Fulfilled purchase orders</p>
+              </>
+            )}
           </div>
         </div>
       </div>

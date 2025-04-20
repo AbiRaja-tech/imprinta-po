@@ -6,16 +6,18 @@ import { Plus } from "lucide-react"
 
 export default function DashboardPage() {
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-6 min-w-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
-          <p className="text-sm md:text-base text-muted-foreground mt-1">Overview of your purchase orders and procurement activities.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            Overview of your purchase orders and suppliers.
+          </p>
         </div>
-        <Button asChild className="bg-blue-600 hover:bg-blue-700 w-full md:w-auto">
-          <Link href="/purchase-orders/create" className="flex items-center justify-center">
+        <Button asChild>
+          <Link href="/purchase-orders/create">
             <Plus className="mr-2 h-4 w-4" />
-            Create PO
+            Create Purchase Order
           </Link>
         </Button>
       </div>
@@ -24,7 +26,7 @@ export default function DashboardPage() {
         <StatusCards />
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border/40">
+      <div className="min-w-0 overflow-hidden">
         <RecentPurchaseOrders />
       </div>
     </div>

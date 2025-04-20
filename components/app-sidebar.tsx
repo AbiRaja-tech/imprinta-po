@@ -1,14 +1,16 @@
 "use client"
 
 import type React from "react"
+import { useState } from "react"
 
-import { BarChart3, FileText, Home, Package, Settings, Truck, Users, LogOut, Tag } from "lucide-react"
+import { BarChart3, FileText, Home, Package, Settings, Truck, Users, LogOut, Tag, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { ModeToggle } from "@/components/mode-toggle"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
+import { useSidebar } from "@/app/(dashboard)/layout"
 
 interface NavItemProps {
   href: string
@@ -37,6 +39,7 @@ export function AppSidebar() {
   const pathname = usePathname()
   const { permissions, signOut } = useAuth()
   const router = useRouter()
+  const { isCollapsed, setIsCollapsed } = useSidebar()
 
   const handleNavigation = async (path: string) => {
     console.log('Navigation requested:', { path, permissions });
@@ -125,37 +128,74 @@ export function AppSidebar() {
   ]
 
   return (
-    <div className="hidden md:flex w-[220px] border-r border-border/40 flex-col bg-[#0f1219]">
-      <div className="p-4 border-b border-border/40 flex items-center">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-600">
-          <FileText className="h-4 w-4 text-white" />
-        </div>
-        <span className="text-lg font-bold ml-2">ImprintaPO</span>
+    <div className={cn(
+      "fixed inset-y-0 left-0 hidden md:flex flex-col border-r border-border/40 bg-[#0f1219] transition-all duration-300 z-40",
+      isCollapsed ? "w-[60px]" : "w-[220px]"
+    )}>
+      <div className="flex h-14 items-center justify-between border-b border-border/40 px-2">
+        {!isCollapsed && (
+          <div className="flex items-center gap-2 px-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-600">
+              <FileText className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-lg font-bold">ImprintaPO</span>
+          </div>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("h-8 w-8 shrink-0", isCollapsed && "mx-auto")}
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          <ChevronRight className={cn("h-4 w-4 transition-transform duration-200", isCollapsed && "rotate-180")} />
+        </Button>
       </div>
 
-      <div className="px-2 py-4 flex-1">
+      <div className="flex-1 overflow-y-auto px-2 py-4">
         <div className="space-y-4">
           <div>
-            <p className="px-4 text-xs font-medium text-muted-foreground mb-2">Navigation</p>
+            <p className={cn(
+              "px-2 text-xs font-medium text-muted-foreground mb-2 transition-opacity duration-200",
+              isCollapsed && "opacity-0"
+            )}>Navigation</p>
             <nav className="space-y-1">
               {commonNavItems.map((item) => (
-                <NavItem 
-                  key={item.href} 
-                  {...item} 
-                />
+                <button
+                  key={item.href}
+                  onClick={item.onClick}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm transition-all hover:text-accent-foreground",
+                    item.active && "bg-accent text-accent-foreground",
+                    isCollapsed && "justify-center px-0"
+                  )}
+                >
+                  <item.icon className={cn("h-4 w-4", isCollapsed ? "mx-auto" : "mr-2")} />
+                  {!isCollapsed && item.label}
+                </button>
               ))}
             </nav>
           </div>
 
           {adminNavItems.length > 0 && (
             <div>
-              <p className="px-4 text-xs font-medium text-muted-foreground mb-2">Administration</p>
+              <p className={cn(
+                "px-2 text-xs font-medium text-muted-foreground mb-2 transition-opacity duration-200",
+                isCollapsed && "opacity-0"
+              )}>Administration</p>
               <nav className="space-y-1">
                 {adminNavItems.map((item) => (
-                  <NavItem 
-                    key={item.href} 
-                    {...item}
-                  />
+                  <button
+                    key={item.href}
+                    onClick={item.onClick}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm transition-all hover:text-accent-foreground",
+                      item.active && "bg-accent text-accent-foreground",
+                      isCollapsed && "justify-center px-0"
+                    )}
+                  >
+                    <item.icon className={cn("h-4 w-4", isCollapsed ? "mx-auto" : "mr-2")} />
+                    {!isCollapsed && item.label}
+                  </button>
                 ))}
               </nav>
             </div>
@@ -163,14 +203,17 @@ export function AppSidebar() {
         </div>
       </div>
 
-      <div className="mt-auto p-4 border-t border-border/40">
+      <div className="border-t border-border/40 p-2">
         <Button
           variant="ghost"
-          className="w-full justify-start"
+          className={cn(
+            "w-full text-red-500 hover:text-red-500 hover:bg-red-500/10",
+            isCollapsed ? "justify-center px-0" : "justify-start"
+          )}
           onClick={() => signOut()}
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          Logout
+          <LogOut className={cn("h-4 w-4", isCollapsed ? "mx-auto" : "mr-2")} />
+          {!isCollapsed && "Logout"}
         </Button>
       </div>
     </div>

@@ -85,65 +85,87 @@ export function RecentPurchaseOrders() {
   }
 
   return (
-    <div className="bg-[#0f1219] rounded-lg border border-border/40">
+    <div className="bg-[#0f1219] rounded-lg flex flex-col mb-20 md:mb-0">
       <div className="p-4 border-b border-border/40">
         <h2 className="text-lg font-semibold">Recent Purchase Orders</h2>
         <p className="text-sm text-muted-foreground mt-1">Your most recent purchase orders across all suppliers.</p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-border/40 bg-muted/5">
-              <th className="text-left text-xs font-medium text-muted-foreground p-3">PO Number</th>
-              <th className="text-left text-xs font-medium text-muted-foreground p-3">Supplier</th>
-              <th className="text-left text-xs font-medium text-muted-foreground p-3">Date</th>
-              <th className="text-left text-xs font-medium text-muted-foreground p-3">Status</th>
-              <th className="text-left text-xs font-medium text-muted-foreground p-3">Total</th>
-              <th className="text-left text-xs font-medium text-muted-foreground p-3">Project</th>
-              <th className="text-right text-xs font-medium text-muted-foreground p-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentPOs.map((po) => (
-              <tr key={po.id} className="border-b border-border/40 hover:bg-muted/5">
-                <td className="p-3 text-sm font-medium">{po.poNumber}</td>
-                <td className="p-3 text-sm">{po.supplier}</td>
-                <td className="p-3 text-sm">
-                  {po.date instanceof Date && !isNaN(po.date.getTime())
-                    ? new Intl.DateTimeFormat('en-IN', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit'
-                      }).format(po.date)
-                    : 'Invalid Date'}
-                </td>
-                <td className="p-3 text-sm">{getStatusBadge(po.status)}</td>
-                <td className="p-3 text-sm font-medium">
-                  {typeof po.total === 'number' 
-                    ? new Intl.NumberFormat('en-IN', { 
-                        style: 'currency', 
-                        currency: 'INR',
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2 
-                      }).format(po.total)
-                    : '₹0.00'}
-                </td>
-                <td className="p-3 text-sm max-w-[200px] truncate" title={po.project || 'N/A'}>
-                  {po.project || 'N/A'}
-                </td>
-                <td className="p-3 text-right">
-                  <Button variant="ghost" size="icon" asChild className="h-8 w-8">
-                    <Link href={`/purchase-orders/${po.id}`}>
-                      <Eye className="h-4 w-4" />
-                      <span className="sr-only">View</span>
-                    </Link>
-                  </Button>
-                </td>
+      <div className="relative">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-border">
+          <table className="w-full border-collapse">
+            <thead className="bg-[#0f1219]">
+              <tr>
+                <th scope="col" className="sticky left-0 z-20 bg-[#0f1219] px-4 py-3.5 text-left text-sm font-medium text-muted-foreground border-r border-border/40 min-w-[200px]">
+                  PO Number
+                </th>
+                <th scope="col" className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[150px]">
+                  Supplier
+                </th>
+                <th scope="col" className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[120px]">
+                  Date
+                </th>
+                <th scope="col" className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[120px]">
+                  Status
+                </th>
+                <th scope="col" className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[150px]">
+                  Total
+                </th>
+                <th scope="col" className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[200px]">
+                  Project
+                </th>
+                <th scope="col" className="relative px-4 py-3.5 min-w-[100px]">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {recentPOs.map((po) => (
+                <tr key={po.id} className="hover:bg-muted/5">
+                  <td className="sticky left-0 z-20 bg-[#0f1219] whitespace-nowrap px-4 py-4 text-sm font-medium border-r border-border/40">
+                    {po.poNumber}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-4 text-sm">
+                    {po.supplier}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-4 text-sm">
+                    {po.date instanceof Date && !isNaN(po.date.getTime())
+                      ? new Intl.DateTimeFormat('en-IN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit'
+                        }).format(po.date)
+                      : 'Invalid Date'}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-4 text-sm">
+                    {getStatusBadge(po.status)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-4 text-sm font-medium">
+                    {typeof po.total === 'number' 
+                      ? new Intl.NumberFormat('en-IN', { 
+                          style: 'currency', 
+                          currency: 'INR',
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2 
+                        }).format(po.total)
+                      : '₹0.00'}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-4 text-sm" title={po.project || 'N/A'}>
+                    {po.project || 'N/A'}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-4 text-right text-sm">
+                    <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+                      <Link href={`/purchase-orders/${po.id}`}>
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">View</span>
+                      </Link>
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

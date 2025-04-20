@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Menu, FileText, Home, Building2 } from "lucide-react"
+import { Menu, FileText, Home, Building2, Package2, Boxes } from "lucide-react"
+import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import Link from "next/link"
 
 export function MobileHeader() {
   const [open, setOpen] = useState(false)
@@ -46,6 +46,13 @@ export function MobileHeader() {
               >
                 <Building2 className="h-4 w-4" />
                 Suppliers
+              </Link>
+              <Link
+                to="/types"
+                className="flex flex-col items-center gap-1 text-xs font-medium"
+              >
+                <Boxes className="h-5 w-5" />
+                Types
               </Link>
             </nav>
           </SheetContent>

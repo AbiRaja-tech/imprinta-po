@@ -181,21 +181,35 @@ export function PurchaseOrdersTable() {
         </div>
       </div>
 
-      <div className="rounded-md border border-border/40">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border/40 bg-[#0f1219]">
-                <th className="px-4 py-3 text-left text-sm font-medium">PO Number</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Supplier</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Total</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Project</th>
-                <th className="px-4 py-3 text-center text-sm font-medium">Actions</th>
+      <div className="relative overflow-hidden">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-border">
+          <table className="w-full min-w-[800px] border-collapse">
+            <thead className="bg-[#0f1219]">
+              <tr>
+                <th className="sticky left-0 z-20 bg-[#0f1219] px-4 py-3.5 text-left text-sm font-medium text-muted-foreground border-r border-border/40 min-w-[200px]">
+                  PO Number
+                </th>
+                <th className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[150px]">
+                  Supplier
+                </th>
+                <th className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[120px]">
+                  Date
+                </th>
+                <th className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[120px]">
+                  Status
+                </th>
+                <th className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[150px]">
+                  Total
+                </th>
+                <th className="px-4 py-3.5 text-left text-sm font-medium text-muted-foreground min-w-[200px]">
+                  Project
+                </th>
+                <th className="px-4 py-3.5 text-center text-sm font-medium text-muted-foreground min-w-[100px]">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border/40">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center">
@@ -210,46 +224,34 @@ export function PurchaseOrdersTable() {
                 </tr>
               ) : (
                 purchaseOrders.map((order) => (
-                  <tr key={order.id} className="border-b border-border/40">
-                    <td className="px-4 py-3 text-sm">{order.poNumber}</td>
-                    <td className="px-4 py-3 text-sm">
+                  <tr key={order.id} className="hover:bg-muted/5">
+                    <td className="sticky left-0 z-20 bg-[#0f1219] whitespace-nowrap px-4 py-4 text-sm font-medium border-r border-border/40">
+                      {order.poNumber}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4 text-sm">
                       {suppliers.find((s) => s.id === order.supplier)?.name || 'Unknown Supplier'}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="whitespace-nowrap px-4 py-4 text-sm">
                       {format(order.orderDate, "yyyy-MM-dd")}
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          statusColors[order.status]
-                        }`}
-                      >
+                    <td className="whitespace-nowrap px-4 py-4 text-sm">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[order.status]}`}>
                         {order.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm">₹{order.totalAmount.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-sm">{order.projectRef}</td>
-                    <td className="px-4 py-3 text-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleUpdate(order.id)}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Update
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDelete(order.id)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <td className="whitespace-nowrap px-4 py-4 text-sm">₹{order.totalAmount.toFixed(2)}</td>
+                    <td className="whitespace-nowrap px-4 py-4 text-sm">{order.projectRef}</td>
+                    <td className="whitespace-nowrap px-4 py-4 text-center text-sm">
+                      <div className="flex items-center justify-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleUpdate(order.id)}>
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(order.id)}>
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -22,7 +22,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && user) {
       console.log('User already logged in, redirecting to dashboard');
-      router.replace("/dashboard")
+      router.replace("/dashboard/dashboard")
     }
   }, [loading, user, router])
 
@@ -35,7 +35,7 @@ export default function LoginPage() {
       await signIn(formData.email, formData.password)
       console.log('Login successful')
       toast.success("Logged in successfully")
-      router.replace("/dashboard")
+      router.replace("/dashboard/dashboard")
     } catch (error: any) {
       console.error('Login error:', error)
       toast.error(error.message || "Failed to log in")

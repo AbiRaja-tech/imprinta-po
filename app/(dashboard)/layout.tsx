@@ -29,7 +29,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading, permissions } = useAuth();
+  const { user, loading, permissions, isAuthenticated } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -48,37 +48,34 @@ export default function DashboardLayout({
   }, []);
 
   useEffect(() => {
-    console.log('Dashboard layout effect:', {
+    console.log('[DashboardLayout] Mount effect running', {
       loading,
+      isAuthenticated,
       userId: user?.uid,
-      path: pathname,
-      permissions,
-      isRedirecting
+      pathname
     });
 
+    // Handle authentication state
     if (!loading && !isRedirecting) {
-      if (!user) {
-        console.log('No user in dashboard, redirecting to login');
-        setIsRedirecting(true);
-        router.replace("/login");
+      if (!isAuthenticated || !user) {
+        console.log('[DashboardLayout] User not authenticated, redirecting to login');
+        window.location.href = '/login';
         return;
       }
 
       // Check permissions for protected routes
       if (pathname === '/reports' && !permissions?.canViewReports) {
-        console.log('No reports permission, redirecting to dashboard');
-        setIsRedirecting(true);
-        router.replace("/dashboard");
+        console.log('[DashboardLayout] No reports permission, redirecting to dashboard');
+        window.location.href = '/dashboard';
         return;
       }
       if (pathname === '/settings' && !permissions?.canManageSettings) {
-        console.log('No settings permission, redirecting to dashboard');
-        setIsRedirecting(true);
-        router.replace("/dashboard");
+        console.log('[DashboardLayout] No settings permission, redirecting to dashboard');
+        window.location.href = '/dashboard';
         return;
       }
     }
-  }, [user, loading, permissions, router, pathname, isRedirecting]);
+  }, [user, loading, permissions, pathname, isRedirecting, isAuthenticated]);
 
   // Show loading state
   if (loading || isRedirecting) {
@@ -93,7 +90,7 @@ export default function DashboardLayout({
   }
 
   // Don't render anything if there's no user
-  if (!user) {
+  if (!isAuthenticated || !user) {
     return null;
   }
 

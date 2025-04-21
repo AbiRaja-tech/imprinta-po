@@ -37,6 +37,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
 
+  // Function to handle navigation
+  const handleNavigation = (path: string) => {
+    console.log('[AuthProvider] Handling navigation to:', path);
+    // Force a hard navigation by using window.location
+    window.location.href = path;
+  };
+
   useEffect(() => {
     console.log('[AuthProvider] Setting up auth state listener')
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -83,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (currentPath === '/login') {
             console.log('[AuthProvider] Redirecting to dashboard from login')
-            router.push('/dashboard')
+            handleNavigation('/dashboard')
           }
         } catch (error) {
           console.error('[AuthProvider] Error setting up user:', error)
@@ -101,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const currentPath = window.location.pathname
         if (currentPath !== '/login') {
           console.log('[AuthProvider] Redirecting to login')
-          router.push('/login')
+          handleNavigation('/login')
         }
       }
     })
@@ -110,13 +117,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('[AuthProvider] Cleaning up auth state listener')
       unsubscribe()
     }
-  }, [router])
+  }, [])
 
   const signOut = async () => {
     try {
       console.log('[AuthProvider] Signing out')
       await authSignOut()
-      router.push('/login')
+      handleNavigation('/login')
     } catch (error) {
       console.error('[AuthProvider] Error signing out:', error)
     }

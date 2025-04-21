@@ -30,6 +30,11 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
+    // Handle root path redirect
+    if (pathname === '/') {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
     // If we're at /dashboard/dashboard, redirect to /dashboard
     if (pathname === '/dashboard/dashboard') {
       return NextResponse.redirect(new URL("/dashboard", request.url));

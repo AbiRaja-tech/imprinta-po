@@ -1,10 +1,19 @@
+"use client"
+
 import { StatusCards } from "@/components/dashboard/status-cards"
 import { RecentPurchaseOrders } from "@/components/dashboard/recent-purchase-orders"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Plus } from "lucide-react"
+import { useEffect } from "react"
 
 export default function DashboardPage() {
+  useEffect(() => {
+    console.log('[DashboardPage] Page mounted');
+  }, []);
+
+  console.log('[DashboardPage] Rendering dashboard page');
+  
   return (
     <div className="flex flex-col gap-6 min-w-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

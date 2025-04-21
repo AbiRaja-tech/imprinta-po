@@ -7,27 +7,44 @@ export async function middleware(request: NextRequest) {
 
   // If there's no session, redirect to login
   if (!session) {
+    console.log('No session found, redirecting to login');
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   try {
     // Verify the session by making a call to your API route
-    const response = await fetch(new URL("/api/auth/verify", request.url), {
+    const verifyUrl = new URL("/api/auth/verify", request.url);
+    console.log('Verifying session at:', verifyUrl.toString());
+    
+    const response = await fetch(verifyUrl, {
       headers: {
         Cookie: `session=${session.value}`,
       },
     });
 
     if (!response.ok) {
+      console.log('Session verification failed:', await response.text());
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
     return NextResponse.next();
   } catch (error) {
+    console.error('Middleware error:', error);
     return NextResponse.redirect(new URL("/login", request.url));
   }
 }
 
+// Update matcher to exclude public routes and assets
 export const config = {
-  matcher: ["/dashboard/:path*", "/settings/:path*", "/reports/:path*"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api/auth (auth API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - login, register, signup (auth pages)
+     */
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|login|register|signup).*)",
+  ],
 }; 

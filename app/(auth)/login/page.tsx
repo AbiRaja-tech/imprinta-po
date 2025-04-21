@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
+import { ErrorBoundary } from "react-error-boundary"
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
   const { user, loading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
@@ -21,7 +22,7 @@ export default function LoginPage() {
   // Handle auth redirects
   useEffect(() => {
     if (!loading && user) {
-      console.log('User already logged in, redirecting to dashboard');
+      console.log('User already logged in, redirecting to dashboard')
       router.replace("/dashboard/dashboard")
     }
   }, [loading, user, router])
@@ -42,20 +43,6 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // Show loading state while checking auth
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="text-center">Loading...</div>
-      </div>
-    )
-  }
-
-  // Don't render the form if user is already logged in
-  if (user) {
-    return null
   }
 
   return (
@@ -104,5 +91,27 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+function ErrorFallback({ error, resetErrorBoundary }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="text-center">
+        <h2 className="text-lg font-semibold">Something went wrong:</h2>
+        <pre className="mt-2 text-sm text-red-500">{error.message}</pre>
+        <Button onClick={resetErrorBoundary} className="mt-4">
+          Try again
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <LoginForm />
+    </ErrorBoundary>
   )
 }

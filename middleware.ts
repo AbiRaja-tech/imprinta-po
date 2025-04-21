@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  // Get the pathname
+  const pathname = request.nextUrl.pathname;
+  
   // Get the session cookie
   const session = request.cookies.get("session");
 
@@ -25,6 +28,11 @@ export async function middleware(request: NextRequest) {
     if (!response.ok) {
       console.log('Session verification failed:', await response.text());
       return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    // If we're at /dashboard/dashboard, redirect to /dashboard
+    if (pathname === '/dashboard/dashboard') {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
     return NextResponse.next();

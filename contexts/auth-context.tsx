@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Use router for navigation
-      router.push(path);
+      await router.replace(path);
     } catch (error) {
       console.error('[AuthProvider] Navigation error:', error);
       // If session creation fails, sign out

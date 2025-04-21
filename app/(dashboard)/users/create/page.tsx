@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function CreateUserPage() {
   const router = useRouter();
+  const { permissions } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -24,7 +26,7 @@ export default function CreateUserPage() {
     try {
       await createUser(formData.email, formData.password, formData.name, "user");
       toast.success("User account created successfully");
-      router.push("/users");
+      router.push("/dashboard/users");
     } catch (error: any) {
       console.error("User creation error:", error);
       // Handle specific Firebase errors
@@ -36,6 +38,11 @@ export default function CreateUserPage() {
       setIsLoading(false);
     }
   };
+
+  if (!permissions?.canManageUsers) {
+    router.push('/dashboard');
+    return null;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">

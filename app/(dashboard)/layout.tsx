@@ -62,7 +62,7 @@ export default function DashboardLayout({
       }
 
       // Check permissions for protected routes
-      if (pathname === '/users' && !permissions?.canManageUsers) {
+      if (pathname === '/dashboard/users' && !permissions?.canManageUsers) {
         console.log('No users permission, redirecting to dashboard');
         router.push("/dashboard");
         return;

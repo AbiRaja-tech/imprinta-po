@@ -45,7 +45,7 @@ export function AppSidebar() {
     console.log('Navigation requested:', { path, permissions });
     
     // Check permissions for protected routes
-    if (path === '/users' && !permissions?.canManageUsers) {
+    if (path === '/dashboard/users' && !permissions?.canManageUsers) {
       console.log('No users permission, staying on current page');
       return;
     }
@@ -105,11 +105,11 @@ export function AppSidebar() {
   // Admin-only navigation items - only show if user has permissions
   const adminNavItems: NavItemProps[] = !permissions ? [] : [
     ...(permissions.canManageUsers ? [{
-      href: "/users",
+      href: "/dashboard/users",
       icon: Users,
       label: "Users",
-      active: pathname.includes("/users"),
-      onClick: () => handleNavigation("/users")
+      active: pathname.includes("/dashboard/users"),
+      onClick: () => handleNavigation("/dashboard/users")
     }] : []),
     ...(permissions.canViewReports ? [{
       href: "/reports",

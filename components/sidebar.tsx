@@ -65,7 +65,7 @@ export function Sidebar({ className }: SidebarProps) {
       {
         label: "Users",
         icon: Users,
-        href: "/users",
+        href: "/dashboard/users",
         color: "text-blue-700",
       },
       {

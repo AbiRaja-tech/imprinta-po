@@ -59,10 +59,10 @@ export function SidebarNav({ className, user, ...props }: SidebarNavProps) {
       </Link>
       {user?.role === "admin" && (
         <Link
-          href="/users"
+          href="/dashboard/users"
           className={cn(
             buttonVariants({ variant: "ghost" }),
-            pathname === "/users"
+            pathname === "/dashboard/users"
               ? "bg-muted hover:bg-muted"
               : "hover:bg-transparent hover:underline",
             "justify-start"

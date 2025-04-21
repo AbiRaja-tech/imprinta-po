@@ -32,7 +32,7 @@ export default function CreateUserPage() {
     try {
       await createUser(formData.email, formData.password, formData.name, "user");
       toast.success("User account created successfully");
-      router.push("/users");
+      router.push("/dashboard/users");
     } catch (error) {
       console.error("User creation error:", error);
       toast.error("Failed to create user account");

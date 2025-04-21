@@ -35,22 +35,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null)
   const [permissions, setPermissions] = useState<AuthContextType['permissions']>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
 
   // Function to handle navigation
   const handleNavigation = async (path: string) => {
+    if (isNavigating) return;
     console.log('[AuthProvider] Handling navigation to:', path);
+    setIsNavigating(true);
+    
     try {
-      // Force a hard navigation for login/dashboard routes
-      if (path === '/login' || path === '/dashboard') {
-        window.location.href = path;
-      } else {
-        await router.push(path);
+      // Set session cookie
+      if (path === '/dashboard') {
+        const idToken = await user?.getIdToken();
+        if (idToken) {
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token: idToken }),
+          });
+        }
       }
+
+      // Use router for navigation
+      await router.push(path);
     } catch (error) {
       console.error('[AuthProvider] Navigation error:', error);
-      window.location.href = path;
+    } finally {
+      setIsNavigating(false);
     }
   };
 
@@ -68,8 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         currentPath: pathname
       });
 
-      setLoading(true);
-
       try {
         if (firebaseUser) {
           const userDocRef = doc(db, "users", firebaseUser.uid)
@@ -85,29 +98,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               canManageSettings: userData.role === 'admin'
             }
             setPermissions(rolePermissions)
-            
-            console.log('[AuthProvider] User data set:', {
-              role: userData.role,
-              permissions: rolePermissions
-            })
           }
 
           setUser(firebaseUser)
           setIsAuthenticated(true)
 
-          // Handle navigation after authentication
-          if (pathname === '/login') {
+          // Only redirect if we're on the login page and not already navigating
+          if (pathname === '/login' && !isNavigating) {
             console.log('[AuthProvider] On login page, redirecting to dashboard')
             await handleNavigation('/dashboard')
           }
         } else {
-          console.log('[AuthProvider] No user found, resetting state')
           setUser(null)
           setUserRole(null)
           setPermissions(null)
           setIsAuthenticated(false)
 
-          if (pathname !== '/login') {
+          // Only redirect if not on login page and not already navigating
+          if (pathname !== '/login' && !isNavigating) {
             console.log('[AuthProvider] Not on login, redirecting to login')
             await handleNavigation('/login')
           }
@@ -126,12 +134,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('[AuthProvider] Cleaning up auth state listener')
       unsubscribe()
     }
-  }, [pathname])
+  }, [pathname, isNavigating])
 
   const signOut = async () => {
     try {
       console.log('[AuthProvider] Signing out')
       await authSignOut()
+      // Clear session
+      await fetch('/api/auth/logout', { method: 'POST' });
       await handleNavigation('/login')
     } catch (error) {
       console.error('[AuthProvider] Error signing out:', error)

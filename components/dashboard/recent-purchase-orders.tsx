@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye, ChevronRight, Loader2 } from "lucide-react"
+import { Eye, ChevronRight, Loader2, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { getDashboardStats } from "@/lib/firebase/dashboard"
 import { useEffect, useState } from "react"
@@ -10,6 +10,7 @@ import { format } from "date-fns"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/utils"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface RecentPurchaseOrder {
   id: string
@@ -47,15 +48,21 @@ function LoadingSpinner({ className }: { className?: string }) {
 
 export function RecentPurchaseOrders() {
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [recentOrders, setRecentOrders] = useState<RecentPurchaseOrder[]>([])
 
   useEffect(() => {
     const fetchRecentOrders = async () => {
       try {
+        setError(null)
         const stats = await getDashboardStats()
-        setRecentOrders(stats.recentPurchaseOrders || [])
+        if (!stats?.recentPurchaseOrders) {
+          throw new Error('Failed to fetch recent purchase orders')
+        }
+        setRecentOrders(stats.recentPurchaseOrders)
       } catch (error) {
         console.error('Error fetching recent orders:', error)
+        setError('Failed to load recent purchase orders. Please try again later.')
       } finally {
         setIsLoading(false)
       }
@@ -64,6 +71,23 @@ export function RecentPurchaseOrders() {
     fetchRecentOrders()
   }, [])
 
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Recent Purchase Orders</h2>
+            <p className="text-sm text-muted-foreground">Latest purchase orders across all projects.</p>
+          </div>
+        </div>
+        <Alert variant="destructive" className="bg-destructive/5 border-destructive/20">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -71,20 +95,20 @@ export function RecentPurchaseOrders() {
           <h2 className="text-lg font-semibold">Recent Purchase Orders</h2>
           <p className="text-sm text-muted-foreground">Latest purchase orders across all projects.</p>
         </div>
-        <Button variant="outline" asChild>
+        <Button variant="outline" asChild className="border-border hover:bg-accent">
           <Link href="/purchase-orders">View All</Link>
         </Button>
       </div>
-      <div className="rounded-lg border">
+      <div className="rounded-lg border border-border bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>PO Number</TableHead>
-              <TableHead className="hidden sm:table-cell">Supplier</TableHead>
-              <TableHead className="hidden md:table-cell">Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden lg:table-cell">Total</TableHead>
-              <TableHead className="hidden xl:table-cell">Project</TableHead>
+            <TableRow className="hover:bg-accent/5">
+              <TableHead className="text-muted-foreground">PO Number</TableHead>
+              <TableHead className="hidden sm:table-cell text-muted-foreground">Supplier</TableHead>
+              <TableHead className="hidden md:table-cell text-muted-foreground">Date</TableHead>
+              <TableHead className="text-muted-foreground">Status</TableHead>
+              <TableHead className="hidden lg:table-cell text-muted-foreground">Total</TableHead>
+              <TableHead className="hidden xl:table-cell text-muted-foreground">Project</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -92,18 +116,18 @@ export function RecentPurchaseOrders() {
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
-                  <LoadingSpinner className="mx-auto" />
+                  <LoadingSpinner className="mx-auto h-6 w-6 text-primary" />
                 </TableCell>
               </TableRow>
             ) : recentOrders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                   No recent purchase orders
                 </TableCell>
               </TableRow>
             ) : (
               recentOrders.map((order) => (
-                <TableRow key={order.id}>
+                <TableRow key={order.id} className="hover:bg-accent/5">
                   <TableCell className="font-medium">{order.poNumber}</TableCell>
                   <TableCell className="hidden sm:table-cell">{order.supplier}</TableCell>
                   <TableCell className="hidden md:table-cell">
@@ -112,7 +136,10 @@ export function RecentPurchaseOrders() {
                   <TableCell>
                     <Badge 
                       variant={getStatusBadgeVariant(order.status)} 
-                      className={getStatusBadgeClasses(order.status)}
+                      className={cn(
+                        getStatusBadgeClasses(order.status),
+                        "font-medium"
+                      )}
                     >
                       {order.status}
                     </Badge>
@@ -126,7 +153,7 @@ export function RecentPurchaseOrders() {
                       variant="ghost"
                       size="icon"
                       asChild
-                      className="ml-auto"
+                      className="ml-auto hover:bg-accent"
                     >
                       <Link href={`/purchase-orders/${order.id}`}>
                         <ChevronRight className="h-4 w-4" />

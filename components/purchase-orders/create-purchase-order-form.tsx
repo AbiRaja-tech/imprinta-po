@@ -483,102 +483,136 @@ export function CreatePurchaseOrderForm() {
           <CardContent>
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Order Items</h3>
-              <div className="grid grid-cols-[1fr,2fr,1fr,1fr,1fr,1fr,auto] gap-4 items-center">
-                <div>Type *</div>
-                <div>Description *</div>
-                <div>Quantity *</div>
-                <div>Unit Price (₹) *</div>
-                <div>Tax %</div>
-                <div>Total (₹)</div>
-                <div></div>
-              </div>
-
               {lineItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="grid grid-cols-[1fr,2fr,1fr,1fr,1fr,1fr,auto] gap-4 items-center"
-                >
-                  <TypeSelect
-                    value={item.type}
-                    onValueChange={(value) => updateLineItem(item.id, "type", value)}
-                    className="bg-[#0a0d14] border-border/40"
-                  />
+                <div key={item.id} className="space-y-4 bg-[#0a0d14] p-4 rounded-lg border border-border/40">
+                  {/* Row 1: Type and Delete Button */}
+                  <div className="flex justify-between items-center">
+                    <div className="w-full max-w-[200px]">
+                      <FormLabel>Type *</FormLabel>
+                      <TypeSelect
+                        value={item.type}
+                        onValueChange={(value) => updateLineItem(item.id, "type", value)}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500 hover:text-red-600"
+                      onClick={() => removeLineItem(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
 
-                  <Input
-                    value={item.description}
-                    onChange={(e) => updateLineItem(item.id, "description", e.target.value)}
-                    placeholder="Item description"
-                    className="bg-[#0a0d14] border-border/40"
-                  />
+                  {/* Row 2: Description */}
+                  <div className="w-full">
+                    <FormLabel>Description *</FormLabel>
+                    <Textarea
+                      value={item.description}
+                      onChange={(e) => updateLineItem(item.id, "description", e.target.value)}
+                      placeholder="Item description"
+                      className="bg-[#0f1219] border-border/40"
+                    />
+                  </div>
 
-                  <Input
-                    type="number"
-                    value={item.quantity}
-                    onChange={(e) => updateLineItem(item.id, "quantity", parseFloat(e.target.value))}
-                    min="1"
-                    className="bg-[#0a0d14] border-border/40"
-                  />
+                  {/* Row 3: Quantity and Unit Price */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <FormLabel>Quantity *</FormLabel>
+                      <Input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => updateLineItem(item.id, "quantity", parseFloat(e.target.value))}
+                        min={0}
+                        className="bg-[#0f1219] border-border/40"
+                      />
+                    </div>
+                    <div>
+                      <FormLabel>Unit Price (₹) *</FormLabel>
+                      <Input
+                        type="number"
+                        value={item.unitPrice}
+                        onChange={(e) => updateLineItem(item.id, "unitPrice", parseFloat(e.target.value))}
+                        min={0}
+                        className="bg-[#0f1219] border-border/40"
+                      />
+                    </div>
+                  </div>
 
-                  <Input
-                    type="number"
-                    value={item.unitPrice}
-                    onChange={(e) => updateLineItem(item.id, "unitPrice", parseFloat(e.target.value))}
-                    min="0"
-                    step="0.01"
-                    className="bg-[#0a0d14] border-border/40"
-                  />
-
-                  <Input
-                    type="number"
-                    value={currentTaxRate}
-                    readOnly
-                    disabled
-                    className="bg-[#0a0d14] border-border/40 opacity-50 cursor-not-allowed"
-                  />
-
-                  <div className="text-right">₹{item.totalPrice.toFixed(2)}</div>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeLineItem(item.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {/* Row 4: Tax and Total */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <FormLabel>Tax %</FormLabel>
+                      <Input
+                        type="number"
+                        value={item.taxPercent}
+                        onChange={(e) => updateLineItem(item.id, "taxPercent", parseFloat(e.target.value))}
+                        min={0}
+                        className="bg-[#0f1219] border-border/40"
+                      />
+                    </div>
+                    <div>
+                      <FormLabel>Total (₹)</FormLabel>
+                      <Input
+                        type="number"
+                        value={item.totalPrice.toFixed(2)}
+                        readOnly
+                        className="bg-[#0f1219] border-border/40"
+                      />
+                    </div>
+                  </div>
                 </div>
               ))}
 
-              <Button type="button" variant="outline" onClick={addLineItem} className="w-full">
-                <Plus className="mr-2 h-4 w-4" /> Add Item
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full mt-4 bg-[#0a0d14] border-border/40"
+                onClick={addLineItem}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Item
               </Button>
 
-              <div className="flex flex-col gap-2 items-end mt-6 border-t border-border/40 pt-4">
-                <div className="flex justify-between w-64">
+              <Separator className="my-4" />
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal:</span>
                   <span>₹{totals.subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between w-64">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tax Amount:</span>
                   <span>₹{totals.taxAmount.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between w-64 border-t border-border/40 pt-2 text-lg font-semibold">
+                <Separator className="my-2" />
+                <div className="flex justify-between text-lg font-semibold">
                   <span>Total Amount:</span>
                   <span>₹{totals.total.toFixed(2)}</span>
                 </div>
               </div>
             </div>
           </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button
+              type="submit"
+              variant="outline"
+              disabled={isSubmitting}
+              className="bg-[#0a0d14] border-border/40"
+            >
+              Save as Draft
+            </Button>
+            <Button
+              type="button"
+              onClick={onSubmitAndGenerate}
+              disabled={isSubmitting}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Submit & Generate PO
+            </Button>
+          </CardFooter>
         </Card>
-
-        <CardFooter className="flex justify-end gap-4">
-          <Button type="submit" variant="outline" disabled={isSubmitting}>
-            Save as Draft
-          </Button>
-          <Button type="button" onClick={onSubmitAndGenerate} disabled={isSubmitting}>
-            Submit & Generate PO
-          </Button>
-        </CardFooter>
       </form>
     </Form>
   )

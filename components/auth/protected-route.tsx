@@ -24,7 +24,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
       // Check if current route requires specific permissions
       const requiredPermission = PROTECTED_ROUTES[pathname as keyof typeof PROTECTED_ROUTES]
-      if (requiredPermission && permissions && !hasPermission(permissions, requiredPermission)) {
+      if (requiredPermission && permissions && !hasPermission({ ...permissions, role: 'user' }, requiredPermission)) {
         router.push('/dashboard')
         return
       }
@@ -43,7 +43,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Check route permissions
   const requiredPermission = PROTECTED_ROUTES[pathname as keyof typeof PROTECTED_ROUTES]
-  if (requiredPermission && permissions && !hasPermission(permissions, requiredPermission)) {
+  if (requiredPermission && permissions && !hasPermission({ ...permissions, role: 'user' }, requiredPermission)) {
     return null
   }
 

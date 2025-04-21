@@ -12,6 +12,7 @@ export function StatsCards() {
     sent: 0,
     pending: 0,
     completed: 0,
+    recentPurchaseOrders: [],
   })
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()

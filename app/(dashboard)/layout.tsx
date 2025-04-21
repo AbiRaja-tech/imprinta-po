@@ -33,19 +33,6 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === 'b' && (event.ctrlKey || event.metaKey)) {
-        event.preventDefault();
-        setIsCollapsed(prev => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   useEffect(() => {
     console.log('[DashboardLayout] Mount effect running', {
@@ -55,30 +42,30 @@ export default function DashboardLayout({
       pathname
     });
 
-    // Handle authentication state
-    if (!loading && !isRedirecting) {
+    // Only check auth state after loading is complete
+    if (!loading) {
       if (!isAuthenticated || !user) {
         console.log('[DashboardLayout] User not authenticated, redirecting to login');
-        window.location.href = '/login';
+        router.push('/login');
         return;
       }
 
       // Check permissions for protected routes
       if (pathname === '/reports' && !permissions?.canViewReports) {
         console.log('[DashboardLayout] No reports permission, redirecting to dashboard');
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
         return;
       }
       if (pathname === '/settings' && !permissions?.canManageSettings) {
         console.log('[DashboardLayout] No settings permission, redirecting to dashboard');
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
         return;
       }
     }
-  }, [user, loading, permissions, pathname, isRedirecting, isAuthenticated]);
+  }, [user, loading, permissions, pathname, isAuthenticated, router]);
 
   // Show loading state
-  if (loading || isRedirecting) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0a0d14] text-white">
         <div className="text-center">

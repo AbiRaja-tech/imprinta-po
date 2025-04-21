@@ -36,12 +36,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [permissions, setPermissions] = useState<AuthContextType['permissions']>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
+  const [isNavigating, setIsNavigating] = useState(false)
 
   // Function to handle navigation
   const handleNavigation = (path: string) => {
+    if (isNavigating) return; // Prevent multiple navigations
     console.log('[AuthProvider] Handling navigation to:', path);
-    // Force a hard navigation by using window.location
-    window.location.href = path;
+    setIsNavigating(true);
+    router.push(path);
   };
 
   useEffect(() => {
@@ -53,8 +55,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!firebaseUser 
       })
 
-      if (firebaseUser) {
-        try {
+      try {
+        if (firebaseUser) {
           const userDocRef = doc(db, "users", firebaseUser.uid)
           const userDoc = await getDoc(userDocRef)
           console.log('[AuthProvider] User document fetched:', {
@@ -66,7 +68,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const userData = userDoc.data()
             setUserRole(userData.role as 'admin' | 'user')
             
-            // Set permissions based on role
             const rolePermissions = {
               canManageUsers: userData.role === 'admin',
               canViewReports: userData.role === 'admin',
@@ -82,34 +83,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           setUser(firebaseUser)
           setIsAuthenticated(true)
-          setLoading(false)
 
-          // Check current pathname
+          // Only redirect if we're on the login page
           const currentPath = window.location.pathname
-          console.log('[AuthProvider] Current path:', currentPath)
-          
           if (currentPath === '/login') {
-            console.log('[AuthProvider] Redirecting to dashboard from login')
+            console.log('[AuthProvider] On login page, redirecting to dashboard')
             handleNavigation('/dashboard')
           }
-        } catch (error) {
-          console.error('[AuthProvider] Error setting up user:', error)
-          setLoading(false)
-        }
-      } else {
-        console.log('[AuthProvider] No user found, resetting state')
-        setUser(null)
-        setUserRole(null)
-        setPermissions(null)
-        setIsAuthenticated(false)
-        setLoading(false)
+        } else {
+          console.log('[AuthProvider] No user found, resetting state')
+          setUser(null)
+          setUserRole(null)
+          setPermissions(null)
+          setIsAuthenticated(false)
 
-        // Check if we need to redirect to login
-        const currentPath = window.location.pathname
-        if (currentPath !== '/login') {
-          console.log('[AuthProvider] Redirecting to login')
-          handleNavigation('/login')
+          // Only redirect to login if we're not already there
+          const currentPath = window.location.pathname
+          if (currentPath !== '/login') {
+            console.log('[AuthProvider] Not on login, redirecting to login')
+            handleNavigation('/login')
+          }
         }
+      } finally {
+        setLoading(false)
+        setIsNavigating(false)
       }
     })
 
@@ -122,10 +119,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       console.log('[AuthProvider] Signing out')
+      setIsNavigating(true)
       await authSignOut()
       handleNavigation('/login')
     } catch (error) {
       console.error('[AuthProvider] Error signing out:', error)
+      setIsNavigating(false)
     }
   }
 

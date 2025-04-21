@@ -8,7 +8,7 @@ import { app } from '@/lib/firebase/config'
 import { getCurrentUserRole, signOut as authSignOut } from '@/lib/firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 // Initialize Firebase services with proper typing
 const auth: Auth = getAuth(app as FirebaseApp)
@@ -36,24 +36,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [permissions, setPermissions] = useState<AuthContextType['permissions']>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
-  const [isNavigating, setIsNavigating] = useState(false)
+  const pathname = usePathname()
 
   // Function to handle navigation
-  const handleNavigation = (path: string) => {
-    if (isNavigating) return; // Prevent multiple navigations
+  const handleNavigation = async (path: string) => {
     console.log('[AuthProvider] Handling navigation to:', path);
-    setIsNavigating(true);
-    router.push(path);
+    try {
+      await router.push(path);
+    } catch (error) {
+      console.error('[AuthProvider] Navigation error:', error);
+      // Fallback to window.location if router fails
+      window.location.href = path;
+    }
   };
 
   useEffect(() => {
+    let mounted = true;
     console.log('[AuthProvider] Setting up auth state listener')
+    
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       console.log('[AuthProvider] Auth state changed:', { 
         userId: firebaseUser?.uid,
         email: firebaseUser?.email,
-        isAuthenticated: !!firebaseUser 
+        isAuthenticated: !!firebaseUser,
+        currentPath: pathname
       })
+
+      if (!mounted) return;
 
       try {
         if (firebaseUser) {
@@ -84,11 +93,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(firebaseUser)
           setIsAuthenticated(true)
 
-          // Only redirect if we're on the login page
-          const currentPath = window.location.pathname
-          if (currentPath === '/login') {
+          // Handle navigation after authentication
+          if (pathname === '/login') {
             console.log('[AuthProvider] On login page, redirecting to dashboard')
-            handleNavigation('/dashboard')
+            await handleNavigation('/dashboard')
           }
         } else {
           console.log('[AuthProvider] No user found, resetting state')
@@ -97,34 +105,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setPermissions(null)
           setIsAuthenticated(false)
 
-          // Only redirect to login if we're not already there
-          const currentPath = window.location.pathname
-          if (currentPath !== '/login') {
+          if (pathname !== '/login') {
             console.log('[AuthProvider] Not on login, redirecting to login')
-            handleNavigation('/login')
+            await handleNavigation('/login')
           }
         }
+      } catch (error) {
+        console.error('[AuthProvider] Error in auth state change:', error)
       } finally {
-        setLoading(false)
-        setIsNavigating(false)
+        if (mounted) {
+          setLoading(false)
+        }
       }
     })
 
     return () => {
+      mounted = false;
       console.log('[AuthProvider] Cleaning up auth state listener')
       unsubscribe()
     }
-  }, [])
+  }, [pathname])
 
   const signOut = async () => {
     try {
       console.log('[AuthProvider] Signing out')
-      setIsNavigating(true)
       await authSignOut()
-      handleNavigation('/login')
+      await handleNavigation('/login')
     } catch (error) {
       console.error('[AuthProvider] Error signing out:', error)
-      setIsNavigating(false)
     }
   }
 
@@ -132,7 +140,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated,
     userRole,
     loading,
-    permissions
+    permissions,
+    currentPath: pathname
   })
 
   return (

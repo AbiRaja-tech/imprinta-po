@@ -12,7 +12,7 @@ import { ErrorBoundary } from "react-error-boundary"
 
 function LoginForm() {
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user, loading, isAuthenticated } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
@@ -21,26 +21,26 @@ function LoginForm() {
 
   // Handle auth redirects
   useEffect(() => {
-    if (!loading && user) {
-      console.log('User already logged in, redirecting to dashboard')
-      router.replace("/dashboard")
+    console.log('[LoginForm] Auth state:', { loading, isAuthenticated });
+    if (!loading && isAuthenticated) {
+      console.log('[LoginForm] User authenticated, redirecting to dashboard');
+      router.replace("/dashboard");
     }
-  }, [loading, user, router])
+  }, [loading, isAuthenticated, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      console.log('Attempting login with:', formData.email)
+      console.log('[LoginForm] Attempting login with:', formData.email)
       await signIn(formData.email, formData.password)
-      console.log('Login successful')
+      console.log('[LoginForm] Login successful')
       toast.success("Logged in successfully")
-      router.replace("/dashboard")
+      // The auth state change will trigger the redirect
     } catch (error: any) {
-      console.error('Login error:', error)
+      console.error('[LoginForm] Login error:', error)
       toast.error(error.message || "Failed to log in")
-    } finally {
       setIsLoading(false)
     }
   }
@@ -55,7 +55,7 @@ function LoginForm() {
   }
 
   // Don't render the form if user is already logged in
-  if (user) {
+  if (isAuthenticated) {
     return null
   }
 

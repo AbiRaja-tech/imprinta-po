@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
 // In a real app, this would be stored in a database
 const purchaseOrders: any[] = []
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request) {
   try {
-    const id = params.id
+    const url = new URL(request.url)
+    const id = url.pathname.split('/').pop()
 
     // Find purchase order by ID
     const purchaseOrder = purchaseOrders.find((po) => po.id === id || po.poNumber === id)
@@ -21,9 +22,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request) {
   try {
-    const id = params.id
+    const url = new URL(request.url)
+    const id = url.pathname.split('/').pop()
     const data = await request.json()
 
     // Find purchase order index
@@ -49,9 +51,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request) {
   try {
-    const id = params.id
+    const url = new URL(request.url)
+    const id = url.pathname.split('/').pop()
 
     // Find purchase order index
     const index = purchaseOrders.findIndex((po) => po.id === id || po.poNumber === id)

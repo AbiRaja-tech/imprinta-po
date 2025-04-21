@@ -1,14 +1,12 @@
 "use client"
 
 import { EditPurchaseOrderForm } from "@/components/purchase-orders/edit-purchase-order-form"
+import { useParams } from "next/navigation"
 
-interface EditPurchaseOrderPageProps {
-  params: {
-    id: string
-  }
-}
+export default function EditPurchaseOrderPage() {
+  const params = useParams()
+  const id = params?.id as string
 
-export default function EditPurchaseOrderPage({ params }: EditPurchaseOrderPageProps) {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div>
@@ -17,7 +15,7 @@ export default function EditPurchaseOrderPage({ params }: EditPurchaseOrderPageP
           Update the details of your purchase order.
         </p>
       </div>
-      <EditPurchaseOrderForm orderId={params.id} />
+      <EditPurchaseOrderForm orderId={id} />
     </div>
   )
 } 

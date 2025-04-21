@@ -33,6 +33,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -51,48 +52,54 @@ export default function DashboardLayout({
       loading,
       userId: user?.uid,
       path: pathname,
-      permissions
+      permissions,
+      isRedirecting
     });
 
-    if (!loading) {
+    if (!loading && !isRedirecting) {
       if (!user) {
         console.log('No user in dashboard, redirecting to login');
-        router.push("/login");
+        setIsRedirecting(true);
+        router.replace("/login");
         return;
       }
 
       // Check permissions for protected routes
       if (pathname === '/reports' && !permissions?.canViewReports) {
         console.log('No reports permission, redirecting to dashboard');
-        router.push("/dashboard");
+        setIsRedirecting(true);
+        router.replace("/dashboard");
         return;
       }
       if (pathname === '/settings' && !permissions?.canManageSettings) {
         console.log('No settings permission, redirecting to dashboard');
-        router.push("/dashboard");
+        setIsRedirecting(true);
+        router.replace("/dashboard");
         return;
       }
     }
-  }, [user, loading, permissions, router, pathname]);
+  }, [user, loading, permissions, router, pathname, isRedirecting]);
 
-  if (loading) {
-    console.log('Dashboard showing loading state');
+  // Show loading state
+  if (loading || isRedirecting) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-[#0a0d14] text-white">
+        <div className="text-center">
+          <div className="mb-4">Loading...</div>
+          <div className="text-sm text-gray-400">Please wait while we set up your dashboard</div>
+        </div>
       </div>
     );
   }
 
+  // Don't render anything if there's no user
   if (!user) {
-    console.log('Dashboard rendering null for no user');
     return null;
   }
 
-  console.log('Dashboard rendering content');
   return (
     <SidebarContext.Provider value={{ isCollapsed, setIsCollapsed }}>
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen bg-[#0a0d14]">
         <div className="hidden md:block">
           <AppSidebar />
         </div>
@@ -102,32 +109,32 @@ export default function DashboardLayout({
           isCollapsed ? "md:ml-[60px]" : "md:ml-[220px]"
         )}>
           <MobileHeader />
-          <main className="flex-1 p-4 md:p-6 pb-24 md:pb-6 overflow-x-auto">
+          <main className="flex-1 p-4 md:p-6 pb-24 md:pb-6 overflow-x-auto text-white">
             <div>
               {children}
             </div>
           </main>
           
           {/* Mobile Bottom Navigation */}
-          <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
+          <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-gray-800 bg-[#0a0d14]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0a0d14]/60 z-50">
             <nav className="flex items-center justify-around p-3">
-              <Link href="/dashboard" className={`flex flex-col items-center gap-1 ${pathname === '/dashboard' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Link href="/dashboard" className={`flex flex-col items-center gap-1 ${pathname === '/dashboard' ? 'text-blue-500' : 'text-gray-400'}`}>
                 <Home className="h-5 w-5" />
                 <span className="text-xs">Dashboard</span>
               </Link>
-              <Link href="/purchase-orders" className={`flex flex-col items-center gap-1 ${pathname === '/purchase-orders' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Link href="/purchase-orders" className={`flex flex-col items-center gap-1 ${pathname === '/purchase-orders' ? 'text-blue-500' : 'text-gray-400'}`}>
                 <FileText className="h-5 w-5" />
                 <span className="text-xs">Orders</span>
               </Link>
-              <Link href="/suppliers" className={`flex flex-col items-center gap-1 ${pathname === '/suppliers' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Link href="/suppliers" className={`flex flex-col items-center gap-1 ${pathname === '/suppliers' ? 'text-blue-500' : 'text-gray-400'}`}>
                 <Building2 className="h-5 w-5" />
                 <span className="text-xs">Suppliers</span>
               </Link>
-              <Link href="/inventory" className={`flex flex-col items-center gap-1 ${pathname === '/inventory' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Link href="/inventory" className={`flex flex-col items-center gap-1 ${pathname === '/inventory' ? 'text-blue-500' : 'text-gray-400'}`}>
                 <Box className="h-5 w-5" />
                 <span className="text-xs">Inventory</span>
               </Link>
-              <Link href="/settings" className={`flex flex-col items-center gap-1 ${pathname === '/settings' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Link href="/settings" className={`flex flex-col items-center gap-1 ${pathname === '/settings' ? 'text-blue-500' : 'text-gray-400'}`}>
                 <Settings className="h-5 w-5" />
                 <span className="text-xs">Settings</span>
               </Link>

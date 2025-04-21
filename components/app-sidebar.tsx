@@ -118,22 +118,22 @@ export function AppSidebar() {
 
   return (
     <div className={cn(
-      "fixed inset-y-0 left-0 hidden md:flex flex-col border-r border-border/40 bg-[#0f1219] transition-all duration-300 z-40",
+      "fixed inset-y-0 left-0 hidden md:flex flex-col border-r border-gray-800 bg-[#0f1219] transition-all duration-300 z-40",
       isCollapsed ? "w-[60px]" : "w-[220px]"
     )}>
-      <div className="flex h-14 items-center justify-between border-b border-border/40 px-2">
+      <div className="flex h-14 items-center justify-between border-b border-gray-800 px-2">
         {!isCollapsed && (
           <div className="flex items-center gap-2 px-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-600">
               <FileText className="h-4 w-4 text-white" />
             </div>
-            <span className="text-lg font-bold">ImprintaPO</span>
+            <span className="text-lg font-bold text-white">ImprintaPO</span>
           </div>
         )}
         <Button
           variant="ghost"
           size="icon"
-          className={cn("h-8 w-8 shrink-0", isCollapsed && "mx-auto")}
+          className={cn("h-8 w-8 shrink-0 text-gray-400 hover:text-white", isCollapsed && "mx-auto")}
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           <ChevronRight className={cn("h-4 w-4 transition-transform duration-200", isCollapsed && "rotate-180")} />
@@ -144,7 +144,7 @@ export function AppSidebar() {
         <div className="space-y-4">
           <div>
             <p className={cn(
-              "px-2 text-xs font-medium text-muted-foreground mb-2 transition-opacity duration-200",
+              "px-2 text-xs font-medium text-gray-400 mb-2 transition-opacity duration-200",
               isCollapsed && "opacity-0"
             )}>Navigation</p>
             <nav className="space-y-1">
@@ -153,8 +153,8 @@ export function AppSidebar() {
                   key={item.href}
                   onClick={item.onClick}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm transition-all hover:text-accent-foreground",
-                    item.active && "bg-accent text-accent-foreground",
+                    "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm transition-all text-gray-400 hover:text-white",
+                    item.active && "bg-blue-600/20 text-blue-500",
                     isCollapsed && "justify-center px-0"
                   )}
                 >
@@ -168,7 +168,7 @@ export function AppSidebar() {
           {adminNavItems.length > 0 && (
             <div>
               <p className={cn(
-                "px-2 text-xs font-medium text-muted-foreground mb-2 transition-opacity duration-200",
+                "px-2 text-xs font-medium text-gray-400 mb-2 transition-opacity duration-200",
                 isCollapsed && "opacity-0"
               )}>Administration</p>
               <nav className="space-y-1">
@@ -177,8 +177,8 @@ export function AppSidebar() {
                     key={item.href}
                     onClick={item.onClick}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm transition-all hover:text-accent-foreground",
-                      item.active && "bg-accent text-accent-foreground",
+                      "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm transition-all text-gray-400 hover:text-white",
+                      item.active && "bg-blue-600/20 text-blue-500",
                       isCollapsed && "justify-center px-0"
                     )}
                   >
@@ -192,7 +192,7 @@ export function AppSidebar() {
         </div>
       </div>
 
-      <div className="border-t border-border/40 p-2">
+      <div className="border-t border-gray-800 p-2">
         <Button
           variant="ghost"
           className={cn(

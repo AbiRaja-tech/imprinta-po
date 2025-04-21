@@ -1,16 +1,15 @@
 import { ReactElement } from 'react'
-import { pdf, PDFViewer, Document } from '@react-pdf/renderer'
+import { pdf } from '@react-pdf/renderer'
+import { Document, DocumentProps } from '@react-pdf/renderer'
 
-export async function generatePDF(document: ReactElement<typeof Document>) {
+export async function generatePDF(document: ReactElement<DocumentProps>) {
   try {
     const blob = await pdf(document).toBlob()
     const url = URL.createObjectURL(blob)
     const link = window.document.createElement('a')
     link.href = url
-    link.download = `purchase-order-${Date.now()}.pdf`
-    window.document.body.appendChild(link)
+    link.download = 'purchase-order.pdf'
     link.click()
-    window.document.body.removeChild(link)
     URL.revokeObjectURL(url)
   } catch (error) {
     console.error('Error generating PDF:', error)

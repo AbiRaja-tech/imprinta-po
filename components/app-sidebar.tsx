@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 
-import { BarChart3, FileText, Home, Package, Settings, Truck, Users, LogOut, Tag, ChevronRight } from "lucide-react"
+import { BarChart3, FileText, Home, Package, Settings, Truck, LogOut, Tag, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { ModeToggle } from "@/components/mode-toggle"
@@ -45,10 +45,6 @@ export function AppSidebar() {
     console.log('Navigation requested:', { path, permissions });
     
     // Check permissions for protected routes
-    if (path === '/dashboard/users' && !permissions?.canManageUsers) {
-      console.log('No users permission, staying on current page');
-      return;
-    }
     if (path === '/reports' && !permissions?.canViewReports) {
       console.log('No reports permission, staying on current page');
       return;
@@ -104,13 +100,6 @@ export function AppSidebar() {
 
   // Admin-only navigation items - only show if user has permissions
   const adminNavItems: NavItemProps[] = !permissions ? [] : [
-    ...(permissions.canManageUsers ? [{
-      href: "/dashboard/users",
-      icon: Users,
-      label: "Users",
-      active: pathname.includes("/dashboard/users"),
-      onClick: () => handleNavigation("/dashboard/users")
-    }] : []),
     ...(permissions.canViewReports ? [{
       href: "/reports",
       icon: BarChart3,

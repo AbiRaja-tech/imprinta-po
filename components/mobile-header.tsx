@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Menu, FileText, Home, Building2, Package2, Boxes, Settings, LogOut, BarChart2, Users } from "lucide-react"
+import { Menu, FileText, Home, Building2, Package2, Boxes, Settings, LogOut, BarChart2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -71,14 +71,6 @@ export function MobileHeader() {
                 <span>Inventory</span>
               </Link>
               <div className="mt-4 border-t border-border/40 pt-4">
-                <Link
-                  href="/dashboard/users"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
-                >
-                  <Users className="h-4 w-4" />
-                  <span>Users</span>
-                </Link>
                 <Link
                   href="/reports"
                   onClick={() => setOpen(false)}

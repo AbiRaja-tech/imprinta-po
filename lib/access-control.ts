@@ -6,21 +6,18 @@ export type UserRole = 'admin' | 'user';
 
 export interface UserPermissions {
   role: UserRole;
-  canManageUsers: boolean;
   canViewReports: boolean;
   canManageSettings: boolean;
 }
 
 const DEFAULT_PERMISSIONS: UserPermissions = {
   role: 'user',
-  canManageUsers: false,
   canViewReports: false,
   canManageSettings: false,
 };
 
 const ADMIN_PERMISSIONS: UserPermissions = {
   role: 'admin',
-  canManageUsers: true,
   canViewReports: true,
   canManageSettings: true,
 };
@@ -56,7 +53,6 @@ export function hasPermission(permissions: UserPermissions, permission: keyof Us
 }
 
 export const PROTECTED_ROUTES = {
-  '/users': 'canManageUsers',
   '/reports': 'canViewReports',
   '/settings': 'canManageSettings',
 } as const; 

@@ -10,6 +10,7 @@ function LoadingSpinner({ className }: { className?: string }) {
 }
 
 export function StatusCards() {
+  console.log('[StatusCards] Component mounted');
   const [stats, setStats] = useState({
     draft: 0,
     sent: 0,
@@ -21,9 +22,24 @@ export function StatusCards() {
 
   useEffect(() => {
     const fetchStats = async () => {
+      console.log('[StatusCards] Starting to fetch stats...');
       try {
         setError(null);
         const dashboardStats = await getDashboardStats();
+        console.log('[StatusCards] Received dashboard stats:', dashboardStats);
+        
+        if (!dashboardStats) {
+          console.error('[StatusCards] No stats received');
+          throw new Error('Failed to fetch dashboard statistics');
+        }
+
+        console.log('[StatusCards] Setting stats:', {
+          draft: dashboardStats.draft,
+          sent: dashboardStats.sent,
+          pending: dashboardStats.pending,
+          completed: dashboardStats.completed
+        });
+
         setStats({
           draft: dashboardStats.draft,
           sent: dashboardStats.sent,
@@ -31,9 +47,10 @@ export function StatusCards() {
           completed: dashboardStats.completed
         });
       } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
+        console.error('[StatusCards] Error details:', error);
         setError('Failed to load dashboard statistics');
       } finally {
+        console.log('[StatusCards] Fetch completed, setting loading to false');
         setIsLoading(false);
       }
     };
@@ -41,7 +58,14 @@ export function StatusCards() {
     fetchStats();
   }, []);
 
+  console.log('[StatusCards] Current state:', {
+    isLoading,
+    error,
+    stats
+  });
+
   if (error) {
+    console.log('[StatusCards] Rendering error state');
     return (
       <div className="col-span-full bg-red-500/10 text-red-500 rounded-lg border border-red-500/20 p-4 flex items-center gap-2">
         <AlertCircle className="h-5 w-5" />

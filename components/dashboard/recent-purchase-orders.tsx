@@ -47,23 +47,30 @@ function LoadingSpinner({ className }: { className?: string }) {
 }
 
 export function RecentPurchaseOrders() {
+  console.log('[RecentPurchaseOrders] Component mounted');
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [recentOrders, setRecentOrders] = useState<RecentPurchaseOrder[]>([])
 
   useEffect(() => {
     const fetchRecentOrders = async () => {
+      console.log('[RecentPurchaseOrders] Starting to fetch data...');
       try {
         setError(null)
         const stats = await getDashboardStats()
+        console.log('[RecentPurchaseOrders] Received stats:', stats);
+        
         if (!stats?.recentPurchaseOrders) {
+          console.error('[RecentPurchaseOrders] No recentPurchaseOrders in stats:', stats);
           throw new Error('Failed to fetch recent purchase orders')
         }
+        console.log('[RecentPurchaseOrders] Setting orders:', stats.recentPurchaseOrders);
         setRecentOrders(stats.recentPurchaseOrders)
       } catch (error) {
-        console.error('Error fetching recent orders:', error)
+        console.error('[RecentPurchaseOrders] Error details:', error);
         setError('Failed to load recent purchase orders. Please try again later.')
       } finally {
+        console.log('[RecentPurchaseOrders] Fetch completed, setting loading to false');
         setIsLoading(false)
       }
     }
@@ -71,7 +78,15 @@ export function RecentPurchaseOrders() {
     fetchRecentOrders()
   }, [])
 
+  console.log('[RecentPurchaseOrders] Current state:', { 
+    isLoading, 
+    error, 
+    ordersCount: recentOrders.length,
+    orders: recentOrders 
+  });
+
   if (error) {
+    console.log('[RecentPurchaseOrders] Rendering error state');
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">

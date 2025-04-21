@@ -5,7 +5,7 @@ import { MobileHeader } from "@/components/mobile-header";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, createContext, useContext, useState } from "react";
-import { Home, FileText, Building2, Package, Box, Users, FileBarChart2, Settings } from "lucide-react";
+import { Home, FileText, Building2, Package, Box, FileBarChart2, Settings } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -62,11 +62,6 @@ export default function DashboardLayout({
       }
 
       // Check permissions for protected routes
-      if (pathname === '/dashboard/users' && !permissions?.canManageUsers) {
-        console.log('No users permission, redirecting to dashboard');
-        router.push("/dashboard");
-        return;
-      }
       if (pathname === '/reports' && !permissions?.canViewReports) {
         console.log('No reports permission, redirecting to dashboard');
         router.push("/dashboard");

@@ -1,7 +1,7 @@
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/firebase/config';
+import { adminAuth as auth } from '@/lib/firebase/admin';
 import { getUserById } from '@/lib/firebase/users';
 
 export async function GET(request: Request) {
@@ -15,8 +15,7 @@ export async function GET(request: Request) {
     }
 
     // Verify the session cookie
-    await auth.verifyIdToken(sessionCookie);
-    const decodedClaims = await auth.verifySessionCookie(sessionCookie);
+    const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
     const user = await getUserById(decodedClaims.uid);
 
     if (!user) {

@@ -47,23 +47,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     try {
       // Set session cookie
-      if (path === '/dashboard') {
-        const idToken = await user?.getIdToken();
+      if (path === '/dashboard' && user) {
+        const idToken = await user.getIdToken(true); // Force refresh token
         if (idToken) {
-          await fetch('/api/auth/session', {
+          const response = await fetch('/api/auth/session', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ token: idToken }),
           });
+          
+          if (!response.ok) {
+            throw new Error('Failed to set session');
+          }
         }
       }
 
       // Use router for navigation
-      await router.push(path);
+      router.push(path);
     } catch (error) {
       console.error('[AuthProvider] Navigation error:', error);
+      // If session creation fails, sign out
+      await signOut();
     } finally {
       setIsNavigating(false);
     }
@@ -85,6 +91,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       try {
         if (firebaseUser) {
+          // Verify session is valid
+          const sessionResponse = await fetch('/api/auth/verify');
+          const isSessionValid = sessionResponse.ok;
+
+          if (!isSessionValid) {
+            // If session is invalid, get new token and create session
+            const idToken = await firebaseUser.getIdToken(true);
+            await fetch('/api/auth/session', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ token: idToken }),
+            });
+          }
+
           const userDocRef = doc(db, "users", firebaseUser.uid)
           const userDoc = await getDoc(userDocRef)
           
@@ -122,6 +144,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('[AuthProvider] Error in auth state change:', error)
+        // On error, reset state and redirect to login
+        setUser(null)
+        setUserRole(null)
+        setPermissions(null)
+        setIsAuthenticated(false)
+        if (pathname !== '/login') {
+          await handleNavigation('/login')
+        }
       } finally {
         if (mounted) {
           setLoading(false)
@@ -141,10 +171,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('[AuthProvider] Signing out')
       await authSignOut()
       // Clear session
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/auth/session', { method: 'DELETE' });
       await handleNavigation('/login')
     } catch (error) {
       console.error('[AuthProvider] Error signing out:', error)
+      // Force navigation to login even if error occurs
+      router.push('/login')
     }
   }
 

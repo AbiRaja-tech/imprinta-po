@@ -17,15 +17,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const cookieStore = await cookies();
-    cookieStore.set("session", token, {
+    // Create session cookie
+    const expiresIn = 60 * 60 * 24 * 7 * 1000; // 1 week
+    const sessionCookie = await auth.createSessionCookie(token, { expiresIn });
+
+    const response = NextResponse.json({ status: "success" });
+    response.cookies.set("session", sessionCookie, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 1 week
+      maxAge: expiresIn / 1000, // Convert to seconds
+      path: "/"
     });
 
-    return NextResponse.json({ status: "success" });
+    return response;
   } catch (error) {
     console.error("Session error:", error);
     return NextResponse.json(
@@ -39,7 +44,7 @@ export async function POST(request: Request) {
 export async function DELETE() {
   try {
     const response = NextResponse.json({ status: "success" });
-    response.cookies.delete("__session");
+    response.cookies.delete("session");
     return response;
   } catch (error) {
     console.error("Error clearing session:", error);

@@ -546,11 +546,11 @@ export function CreatePurchaseOrderForm() {
                       <FormLabel>Tax %</FormLabel>
                       <Input
                         type="number"
-                        value={item.taxPercent}
-                        onChange={(e) => updateLineItem(item.id, "taxPercent", parseFloat(e.target.value))}
-                        min={0}
+                        value={currentTaxRate}
+                        readOnly
                         className="bg-[#0f1219] border-border/40"
                       />
+                      <FormDescription>Tax rate is set in settings</FormDescription>
                     </div>
                     <div>
                       <FormLabel>Total (₹)</FormLabel>

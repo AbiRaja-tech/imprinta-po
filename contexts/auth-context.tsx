@@ -8,116 +8,138 @@ import { app } from '@/lib/firebase/config'
 import { getCurrentUserRole, signOut as authSignOut } from '@/lib/firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
+import { useRouter } from 'next/navigation'
 
 // Initialize Firebase services with proper typing
 const auth: Auth = getAuth(app as FirebaseApp)
 
 interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  userRole: 'admin' | 'user' | null;
+  user: User | null
+  loading: boolean
+  userRole: 'admin' | 'user' | null
   permissions: {
-    canManageUsers: boolean;
-    canViewReports: boolean;
-    canManageSettings: boolean;
-  } | null;
-  signOut: () => Promise<void>;
+    canManageUsers: boolean
+    canViewReports: boolean
+    canManageSettings: boolean
+  } | null
+  isAuthenticated: boolean
+  signOut: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  userRole: null,
-  permissions: null,
-  signOut: async () => {},
-})
+export const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  console.log('[AuthProvider] Initializing')
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null)
   const [permissions, setPermissions] = useState<AuthContextType['permissions']>(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
-    console.log('Setting up auth state listener');
-    
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('Auth state changed:', { userId: user?.uid });
-      
-      if (user) {
+    console.log('[AuthProvider] Setting up auth state listener')
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('[AuthProvider] Auth state changed:', { 
+        userId: firebaseUser?.uid,
+        email: firebaseUser?.email,
+        isAuthenticated: !!firebaseUser 
+      })
+
+      if (firebaseUser) {
         try {
-          setUser(user)
-          // Get user document from Firestore
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          console.log('User document:', userDoc.data());
-          
+          const userDocRef = doc(db, "users", firebaseUser.uid)
+          const userDoc = await getDoc(userDocRef)
+          console.log('[AuthProvider] User document fetched:', {
+            exists: userDoc.exists(),
+            data: userDoc.data()
+          })
+
           if (userDoc.exists()) {
-            const userData = userDoc.data();
-            const role = userData.role as 'admin' | 'user';
-            setUserRole(role);
+            const userData = userDoc.data()
+            setUserRole(userData.role as 'admin' | 'user')
             
-            // Get permissions from user document or set based on role
-            if (userData.permissions) {
-              console.log('Setting permissions from document:', userData.permissions);
-              setPermissions(userData.permissions);
-            } else {
-              console.log('Setting default permissions for role:', role);
-              setPermissions(role === 'admin' ? {
-                canManageUsers: true,
-                canViewReports: true,
-                canManageSettings: true,
-              } : {
-                canManageUsers: false,
-                canViewReports: false,
-                canManageSettings: false,
-              });
+            // Set permissions based on role
+            const rolePermissions = {
+              canManageUsers: userData.role === 'admin',
+              canViewReports: userData.role === 'admin',
+              canManageSettings: userData.role === 'admin'
             }
-          } else {
-            console.warn('No user document found');
-            setUserRole(null);
-            setPermissions(null);
+            setPermissions(rolePermissions)
+            
+            console.log('[AuthProvider] User data set:', {
+              role: userData.role,
+              permissions: rolePermissions
+            })
+          }
+
+          setUser(firebaseUser)
+          setIsAuthenticated(true)
+          setLoading(false)
+
+          // Check current pathname
+          const currentPath = window.location.pathname
+          console.log('[AuthProvider] Current path:', currentPath)
+          
+          if (currentPath === '/login') {
+            console.log('[AuthProvider] Redirecting to dashboard from login')
+            router.push('/dashboard')
           }
         } catch (error) {
-          console.error('Error setting up user:', error);
-          setUser(null)
-          setUserRole(null)
-          setPermissions(null)
+          console.error('[AuthProvider] Error setting up user:', error)
+          setLoading(false)
         }
       } else {
-        console.log('No user, clearing state');
+        console.log('[AuthProvider] No user found, resetting state')
         setUser(null)
         setUserRole(null)
         setPermissions(null)
+        setIsAuthenticated(false)
+        setLoading(false)
+
+        // Check if we need to redirect to login
+        const currentPath = window.location.pathname
+        if (currentPath !== '/login') {
+          console.log('[AuthProvider] Redirecting to login')
+          router.push('/login')
+        }
       }
-      
-      setLoading(false)
     })
 
     return () => {
-      console.log('Cleaning up auth state listener');
+      console.log('[AuthProvider] Cleaning up auth state listener')
       unsubscribe()
     }
-  }, [])
+  }, [router])
 
   const signOut = async () => {
     try {
+      console.log('[AuthProvider] Signing out')
       await authSignOut()
-      // State will be cleared by the auth state listener
+      router.push('/login')
     } catch (error) {
-      console.error('Error signing out:', error)
+      console.error('[AuthProvider] Error signing out:', error)
     }
   }
 
-  console.log('Auth context current state:', {
-    userId: user?.uid,
+  console.log('[AuthProvider] Current state:', {
+    isAuthenticated,
     userRole,
-    permissions,
     loading,
-    isAuthenticated: !!user
-  });
+    permissions
+  })
 
   return (
-    <AuthContext.Provider value={{ user, loading, userRole, permissions, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        userRole,
+        permissions,
+        isAuthenticated,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

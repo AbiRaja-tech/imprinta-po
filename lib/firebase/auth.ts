@@ -54,14 +54,38 @@ export async function createAdminUser(email: string, password: string, name: str
 }
 
 export async function signIn(email: string, password: string) {
+  console.log('[Auth] Starting sign in process for:', email);
   try {
+    console.log('[Auth] Attempting Firebase authentication...');
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    // Update permissions after successful sign in
+    console.log('[Auth] Firebase authentication successful:', userCredential.user.uid);
+    
+    // Get user document
+    console.log('[Auth] Fetching user document...');
+    const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+    console.log('[Auth] User document exists:', userDoc.exists(), 'Data:', userDoc.data());
+    
+    // Update permissions
+    console.log('[Auth] Updating user permissions...');
     await updateUserPermissions(userCredential.user.uid);
+    console.log('[Auth] Sign in process completed successfully');
+    
     return userCredential.user;
-  } catch (error) {
-    console.error('Error signing in:', error);
-    throw error;
+  } catch (error: any) {
+    console.error('[Auth] Error during sign in:', error.code, error.message);
+    // Enhance error messages for users
+    switch (error.code) {
+      case 'auth/invalid-email':
+        throw new Error('Invalid email address format.');
+      case 'auth/user-disabled':
+        throw new Error('This account has been disabled.');
+      case 'auth/user-not-found':
+        throw new Error('No account found with this email.');
+      case 'auth/wrong-password':
+        throw new Error('Incorrect password.');
+      default:
+        throw new Error('Failed to sign in. Please try again.');
+    }
   }
 }
 

@@ -42,10 +42,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleNavigation = async (path: string) => {
     console.log('[AuthProvider] Handling navigation to:', path);
     try {
-      await router.push(path);
+      // Force a hard navigation for login/dashboard routes
+      if (path === '/login' || path === '/dashboard') {
+        window.location.href = path;
+      } else {
+        await router.push(path);
+      }
     } catch (error) {
       console.error('[AuthProvider] Navigation error:', error);
-      // Fallback to window.location if router fails
       window.location.href = path;
     }
   };
@@ -55,24 +59,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('[AuthProvider] Setting up auth state listener')
     
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!mounted) return;
+
       console.log('[AuthProvider] Auth state changed:', { 
         userId: firebaseUser?.uid,
         email: firebaseUser?.email,
         isAuthenticated: !!firebaseUser,
         currentPath: pathname
-      })
+      });
 
-      if (!mounted) return;
+      setLoading(true);
 
       try {
         if (firebaseUser) {
           const userDocRef = doc(db, "users", firebaseUser.uid)
           const userDoc = await getDoc(userDocRef)
-          console.log('[AuthProvider] User document fetched:', {
-            exists: userDoc.exists(),
-            data: userDoc.data()
-          })
-
+          
           if (userDoc.exists()) {
             const userData = userDoc.data()
             setUserRole(userData.role as 'admin' | 'user')

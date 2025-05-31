@@ -157,13 +157,3 @@ imprinta-po/
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👥 Authors
-
-- Your Name - Initial work
-
-## 🙏 Acknowledgments
-
-- Next.js team for the amazing framework
-- Firebase team for the backend services
-- Google Cloud Platform for hosting 

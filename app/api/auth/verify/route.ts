@@ -4,11 +4,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth as auth } from '@/lib/firebase/admin';
 import { getUserById } from '@/lib/firebase/users';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const sessionCookie = request.headers.get('Cookie')?.split(';')
-      .find(c => c.trim().startsWith('session='))
-      ?.split('=')[1];
+    const sessionCookie = request.cookies.get('session')?.value;
 
     if (!sessionCookie) {
       return NextResponse.json({ error: 'No session cookie' }, { status: 401 });
